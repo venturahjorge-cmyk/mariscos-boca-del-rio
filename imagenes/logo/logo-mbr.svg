@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960">
+  <!-- Mariscos Boca del Río — recreación del logotipo -->
+  <!-- Fondo blanco -->
+  <rect width="960" height="960" fill="#ffffff"/>
+  <!-- Salpicadura azul -->
+  <path fill="#2f9fd8" d="M96,470 C60,420 90,340 150,330 C130,270 170,210 240,215 C250,150 330,120 390,150 C420,90 520,80 560,135 C620,95 710,120 720,185 C790,180 840,240 815,305 C880,330 900,410 850,460 C895,505 880,580 820,605 C770,690 660,730 560,700 C520,760 420,765 380,705 C300,740 200,700 175,620 C110,600 70,530 96,470 Z"/>
+  <!-- Olas azul oscuro -->
+  <path fill="#1c6fb0" d="M175,585 C280,545 380,610 480,585 C580,560 690,620 790,585 C790,620 770,650 735,660 C640,690 540,640 470,655 C390,670 300,690 235,655 C200,635 180,615 175,585 Z"/>
+  <!-- Rayos rojos del sol -->
+  <g fill="#e84c3d">
+    <path d="M480,140 L520,255 L440,255 Z"/>
+    <path d="M330,185 L415,275 L355,305 Z"/>
+    <path d="M630,185 L605,305 L545,275 Z"/>
+    <path d="M215,320 L340,335 L315,395 Z"/>
+    <path d="M745,320 L645,395 L620,335 Z"/>
+    <path d="M160,470 L290,440 L295,505 Z"/>
+    <path d="M800,470 L665,505 L670,440 Z"/>
+  </g>
+  <!-- Disco amarillo del sol -->
+  <ellipse cx="480" cy="430" rx="185" ry="130" fill="#f7d716"/>
+  <!-- Pez rojo -->
+  <path fill="#e84c3d" d="M430,380 C470,340 540,340 575,385 C605,425 595,480 550,505 C505,530 445,520 420,480 C400,445 405,405 430,380 Z"/>
+  <circle cx="545" cy="405" r="16" fill="#f7d716"/>
+  <circle cx="545" cy="405" r="8" fill="#e84c3d"/>
+  <path fill="#e84c3d" d="M415,470 C395,480 385,500 395,515 C415,512 430,495 432,478 Z"/>
+  <!-- Aleta -->
+  <path fill="#e84c3d" d="M470,345 C480,320 505,310 520,320 C515,340 500,355 485,360 Z"/>
+  <!-- Texto -->
+  <text x="480" y="660" font-family="Georgia, 'Times New Roman', serif" font-size="120" font-weight="bold" font-style="italic" text-anchor="middle" fill="#ffffff" stroke="#1c6fb0" stroke-width="3" paint-order="stroke">Mariscos</text>
+  <text x="480" y="775" font-family="Georgia, 'Times New Roman', serif" font-size="95" font-weight="bold" font-style="italic" text-anchor="middle" fill="#e84c3d" stroke="#ffffff" stroke-width="3" paint-order="stroke">Boca del Río</text>
+</svg>

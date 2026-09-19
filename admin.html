@@ -212,6 +212,32 @@
         </div>
       </section>
 
+      <!-- Banner -->
+      <section class="tarjeta">
+        <h2>🖼️ Banner principal (fondo de arriba)</h2>
+        <div class="aviso">Elige una foto ancha (horizontal) para el fondo del inicio. Si no subes una, se usa el degradado azul.</div>
+        <div id="zona-banner" class="zona-fotos" style="padding: 1rem;" role="button" tabindex="0" aria-label="Subir banner">
+          <div id="vista-banner" style="min-height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🌊</div>
+          <p><strong>Haz clic o arrastra</strong> una imagen de banner (JPG, PNG)</p>
+        </div>
+        <input type="file" id="selector-banner" accept="image/*" class="oculto" />
+        <div class="fila-botones">
+          <button class="boton boton-rojo boton-chico oculto" id="quitar-banner">Quitar banner (volver al degradado)</button>
+        </div>
+      </section>
+
+      <!-- Fotos destacadas -->
+      <section class="tarjeta">
+        <h2>⭐ Fotos destacadas (cinta animada del inicio)</h2>
+        <div class="aviso">Máximo <strong>5 fotos</strong>. Son las que se desplazan en loop debajo del título: elige las más publicitables (platillos, montajes, eventos).</div>
+        <div id="zona-promo" class="zona-fotos" style="padding: 1rem;" role="button" tabindex="0" aria-label="Agregar foto destacada">
+          <div class="icono">⭐</div>
+          <p><strong>Haz clic o arrastra</strong> para agregar una foto destacada</p>
+        </div>
+        <input type="file" id="selector-promo" accept="image/*" class="oculto" />
+        <div class="vista-previa-fotos" id="lista-promos" style="margin-top: 1rem;"></div>
+      </section>
+
       <!-- Nuevo evento -->
       <section class="tarjeta">
         <h2 id="titulo-form-evento">➕ Nuevo evento</h2>
@@ -308,20 +334,26 @@
           nombre: "Mariscos Boca del Río Eventos",
           eslogan: "El sabor del mar en tus eventos más importantes",
           descripcion: "",
-          logo: "imagenes/logo/logo-mbr.png",
+          logo: "imagenes/logo/logo-mbr.svg",
           datos: [],
           contacto: { direccion: "", telefono: "", email: "", horario: "", whatsapp: "", redes: [] },
         },
         EVENTOS: [],
         CLIENTES: [],
+        BANNER: { imagen: "" },
+        PROMOS: [],
       };
       const EMPRESA_BASE = typeof EMPRESA !== "undefined" ? EMPRESA : POR_DEFECTO.EMPRESA;
       const EVENTOS_BASE = typeof EVENTOS !== "undefined" ? EVENTOS : POR_DEFECTO.EVENTOS;
       const CLIENTES_BASE = typeof CLIENTES !== "undefined" ? CLIENTES : POR_DEFECTO.CLIENTES;
+      const BANNER_BASE = typeof BANNER !== "undefined" ? BANNER : POR_DEFECTO.BANNER;
+      const PROMOS_BASE = typeof PROMOS !== "undefined" ? PROMOS : POR_DEFECTO.PROMOS;
 
       let empresa = JSON.parse(JSON.stringify(EMPRESA_BASE));
       let eventos = (EVENTOS_BASE || []).filter((ev) => ev.fotos && ev.fotos.length); // descarta "Próximamente"
       let clientes = CLIENTES_BASE.slice();
+      let banner = JSON.parse(JSON.stringify(BANNER_BASE));
+      let promos = PROMOS_BASE.slice();
       let editandoIndice = null;
       let fotosNuevas = []; // [{src, pie}]
       let claveAdmin = (typeof ADMIN_CLAVE === "string" && ADMIN_CLAVE) ? ADMIN_CLAVE : "mbr2026";
@@ -336,12 +368,15 @@
             eventos = (d.EVENTOS || []).filter((ev) => ev.fotos && ev.fotos.length);
             clientes = d.CLIENTES || [];
           }
+          if (d.BANNER) banner = d.BANNER;
+          if (d.PROMOS) promos = d.PROMOS;
         } catch (e) { /* ignora */ }
       }
 
       function guardarLocal() {
         localStorage.setItem(CLAVE_ALMACEN, JSON.stringify({
           EMPRESA: empresa, EVENTOS: eventos, CLIENTES: clientes,
+          BANNER: banner, PROMOS: promos, ADMIN_CLAVE: claveAdmin,
         }));
       }
 
@@ -364,6 +399,8 @@
         $("#pantalla-panel").classList.remove("oculto");
         llenarFormularioEmpresa();
         pintarLogoActual();
+        pintarBannerAdmin();
+        pintarPromos();
         pintarListaEventos();
         pintarListaClientes();
         setTimeout(actualizarTamano, 100);
@@ -519,6 +556,82 @@
         );
       }
 
+      /* ================= Banner ================= */
+      function pintarBannerAdmin() {
+        const vista = $("#vista-banner");
+        const botonQuitar = $("#quitar-banner");
+        if (banner.imagen) {
+          vista.innerHTML = `<img src="${banner.imagen}" alt="Banner actual" style="width:100%; border-radius:8px; max-height:180px; object-fit:cover;" />`;
+          botonQuitar.classList.remove("oculto");
+        } else {
+          vista.innerHTML = `🌊`;
+          botonQuitar.classList.add("oculto");
+        }
+      }
+
+      function prepararBanner() {
+        const zona = $("#zona-banner");
+        const selector = $("#selector-banner");
+        zona.addEventListener("click", () => selector.click());
+        zona.addEventListener("keydown", (e) => { if (e.key === "Enter") selector.click(); });
+        selector.addEventListener("change", async () => {
+          const archivo = selector.files[0];
+          selector.value = "";
+          if (!archivo) return;
+          const dataURL = await leerArchivoComoDataURL(archivo);
+          banner.imagen = await reducirImagen(dataURL, 1600, 0.8);
+          guardarLocal();
+          pintarBannerAdmin();
+          avisar("✅ Banner guardado. Recuerda publicar los cambios.");
+        });
+        $("#quitar-banner").addEventListener("click", () => {
+          banner.imagen = "";
+          guardarLocal();
+          pintarBannerAdmin();
+          avisar("Banner eliminado: vuelve al degradado azul.");
+        });
+      }
+
+      /* ================= Fotos destacadas (promos) ================= */
+      function pintarPromos() {
+        const cont = $("#lista-promos");
+        if (!promos.length) {
+          cont.innerHTML = `<p style="opacity: 0.7; grid-column: 1/-1;">Sin fotos destacadas. Agrega hasta 5.</p>`;
+          return;
+        }
+        cont.innerHTML = promos.map((src, i) => `
+          <div class="foto-item">
+            ${i === 0 ? `<button type="button" class="fija">★ 1ª</button>` : ""}
+            <img src="${src}" alt="" />
+            <button type="button" class="quitar" data-quitar-promo="${i}" title="Quitar foto">✕</button>
+          </div>`).join("");
+        cont.querySelectorAll("[data-quitar-promo]").forEach((b) =>
+          b.addEventListener("click", () => {
+            promos.splice(Number(b.dataset.quitarPromo), 1);
+            guardarLocal();
+            pintarPromos();
+          })
+        );
+      }
+
+      function prepararPromos() {
+        const zona = $("#zona-promo");
+        const selector = $("#selector-promo");
+        zona.addEventListener("click", () => selector.click());
+        zona.addEventListener("keydown", (e) => { if (e.key === "Enter") selector.click(); });
+        selector.addEventListener("change", async () => {
+          const archivo = selector.files[0];
+          selector.value = "";
+          if (!archivo) return;
+          if (promos.length >= 5) { alert("Máximo 5 fotos destacadas. Quita una primero."); return; }
+          const dataURL = await leerArchivoComoDataURL(archivo);
+          promos.push(await reducirImagen(dataURL, 1000, 0.82));
+          guardarLocal();
+          pintarPromos();
+          avisar("✅ Foto destacada agregada.");
+        });
+      }
+
       /* ================= Eventos ================= */
       function pintarListaEventos() {
         const cont = $("#lista-eventos-admin");
@@ -660,10 +773,14 @@ const ADMIN_CLAVE = ${JSON.stringify(claveAdmin)};
 "const EMPRESA = " + JSON.stringify(empresa, null, 2) + ";\n\n";
         const bloqueEventos =
 "const EVENTOS = " + JSON.stringify(eventos, null, 2) + ";\n\n";
+        const bloqueBanner =
+"const BANNER = " + JSON.stringify(banner, null, 2) + ";\n\n";
+        const bloquePromos =
+"const PROMOS = " + JSON.stringify(promos, null, 2) + ";\n\n";
         const bloqueClientes =
 "const CLIENTES = " + JSON.stringify(clientes, null, 2) + ";\n";
 
-        return cabecera + bloqueEmpresa + bloqueEventos + bloqueClientes;
+        return cabecera + bloqueEmpresa + bloqueBanner + bloquePromos + bloqueEventos + bloqueClientes;
       }
 
       function descargarDatos() {
@@ -687,6 +804,8 @@ const ADMIN_CLAVE = ${JSON.stringify(claveAdmin)};
 
         $("#guardar-empresa").addEventListener("click", guardarEmpresa);
         prepararLogo();
+        prepararBanner();
+        prepararPromos();
         $("#guardar-evento").addEventListener("click", guardarEvento);
         $("#cancelar-edicion").addEventListener("click", cancelarEdicion);
         $("#ev-titulo").addEventListener("input", actualizarBotonGuardar);

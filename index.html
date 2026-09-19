@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Restaurante y salón de eventos. Conoce nuestros eventos y servicios para empresas y celebraciones." />
   <title>Nuestro Restaurante — Eventos y Servicios</title>
-  <link rel="icon" href="imagenes/logo/logo-mbr.png" type="image/png" />
+  <link rel="icon" href="imagenes/logo/logo-mbr.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/estilos.css" />
 </head>
 <body>
@@ -13,7 +13,7 @@
   <!-- ================= BARRA DE NAVEGACIÓN ================= -->
   <header class="barra">
     <a class="marca" href="#inicio">
-      <img id="logo-empresa" src="imagenes/logo/logo-mbr.png" alt="Logo de Mariscos Boca del Río Eventos" />
+      <img id="logo-empresa" src="imagenes/logo/logo-mbr.svg" alt="Logo de Mariscos Boca del Río Eventos" />
       <span id="marca-nombre">Restaurante</span>
     </a>
     <button class="menu-boton" id="menu-boton" aria-label="Abrir menú">☰</button>
@@ -29,12 +29,18 @@
   <!-- ================= PORTADA (HERO) ================= -->
   <section id="inicio" class="hero">
     <div class="hero-contenido">
-      <img id="hero-logo" src="imagenes/logo/logo-mbr.png" alt="" class="hero-logo" />
+      <span class="logo-caja">
+        <img id="hero-logo" src="imagenes/logo/logo-mbr.svg" alt="" class="hero-logo" />
+        <button id="editar-logo" class="lápiz-foto" title="Cambiar logo (administrador)" aria-label="Cambiar logo">✏️</button>
+      </span>
       <h1 id="hero-titulo">Bienvenido a nuestro restaurante</h1>
       <p id="hero-eslogan" class="hero-eslogan">Cocina de calidad y eventos inolvidables</p>
       <div class="hero-botones">
         <a href="#eventos" class="boton boton-primario">Ver nuestros eventos</a>
         <a href="#contacto" class="boton boton-borde">Cotiza tu evento</a>
+      </div>
+      <div class="cinta-wrap">
+        <div id="cinta-fotos" class="cinta"></div>
       </div>
     </div>
   </section>
@@ -94,6 +100,10 @@
     </figure>
     <button class="visor-flecha visor-sig" id="visor-sig" aria-label="Foto siguiente">›</button>
   </div>
+
+  <div id="toast" class="toast oculto"></div>
+
+  <input type="file" id="input-logo-oculto" accept="image/*" class="oculto" />
 
   <script src="js/datos.js"></script>
   <script src="js/funciones.js"></script>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#f7d716"/><stop offset="1" stop-color="#d9a900"/>
+  </linearGradient></defs>
+  <rect width="800" height="600" fill="url(#g)"/>
+  <text x="400" y="280" font-family="Segoe UI, sans-serif" font-size="46" font-weight="bold" text-anchor="middle" fill="#5c4700">🥂 XV Años</text>
+  <text x="400" y="340" font-family="Segoe UI, sans-serif" font-size="24" text-anchor="middle" fill="#8a6d00">Reemplaza con tus fotos promocionales</text>
+</svg>

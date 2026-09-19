@@ -13,6 +13,8 @@
   let empresa = EMPRESA;
   let eventos = EVENTOS || [];
   let clientes = CLIENTES || [];
+  let banner = typeof BANNER !== "undefined" ? BANNER : { imagen: "" };
+  let promos = typeof PROMOS !== "undefined" ? PROMOS : [];
 
   try {
     const guardado = localStorage.getItem(CLAVE_ALMACEN);
@@ -23,6 +25,8 @@
         eventos = d.EVENTOS || [];
         clientes = d.CLIENTES || [];
       }
+      if (d.BANNER) banner = d.BANNER;
+      if (d.PROMOS) promos = d.PROMOS;
     }
   } catch (e) { /* sin datos guardados, se usan los de datos.js */ }
 
@@ -42,6 +46,139 @@
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
     );
 
+  /* ---------- Banner principal (editable desde admin) ---------- */
+  function pintarBanner() {
+    const hero = $("#inicio");
+    if (banner.imagen) {
+      const prueba = new Image();
+      prueba.onload = () => {
+        hero.style.background =
+          `linear-gradient(rgba(7, 34, 56, 0.55), rgba(7, 34, 56, 0.55)), url("${banner.imagen}") center/cover no-repeat`;
+      };
+      prueba.src = banner.imagen;
+    }
+  }
+
+  /* ---------- Cinta de fotos promocionales ---------- */
+  function pintarCinta() {
+    const cinta = $("#cinta-fotos");
+    if (!promos.length) return;
+    // Duplicamos la lista para el efecto de loop infinito
+    const lista = [...promos, ...promos];
+    cinta.innerHTML = lista
+      .map((src) => `
+        <div class="cinta-foto">
+          <img src="${esc(src)}" alt="Foto promocional" loading="lazy"
+               onerror="this.parentNode.remove()" />
+        </div>`)
+      .join("");
+  }
+
+  /* ---------- Modo administrador en la página pública ---------- */
+  function esAdmin() { return sessionStorage.getItem("mbr_admin_sesion") === "1"; }
+
+  function pedirClaveAdmin() {
+    let clave = ADMIN_CLAVE;
+    try {
+      const g = JSON.parse(localStorage.getItem(CLAVE_ALMACEN) || "null");
+      if (g && g.ADMIN_CLAVE) clave = g.ADMIN_CLAVE;
+    } catch (e) { /* usa la de datos.js */ }
+    const intento = prompt("Contraseña de administrador:");
+    return intento !== null && intento === clave;
+  }
+
+  function activarModoAdmin() {
+    sessionStorage.setItem("mbr_admin_sesion", "1");
+    document.body.classList.add("modo-admin");
+    mostrarBotonSalirAdmin();
+    mostrarToast("✏️ Modo administrador activado: haz clic en el lápiz para cambiar el logo.");
+  }
+
+  function mostrarBotonSalirAdmin() {
+    if (document.getElementById("salir-admin")) return;
+    const b = document.createElement("button");
+    b.id = "salir-admin";
+    b.className = "boton boton-coral salir-admin";
+    b.textContent = "Salir del modo admin";
+    b.addEventListener("click", () => {
+      sessionStorage.removeItem("mbr_admin_sesion");
+      location.reload();
+    });
+    document.body.appendChild(b);
+  }
+
+  function prepararEdicionLogo() {
+    const boton = $("#editar-logo");
+    const input = $("#input-logo-oculto");
+
+    boton.addEventListener("click", () => {
+      if (!esAdmin() && !pedirClaveAdmin()) return;
+      activarModoAdmin();
+      input.click();
+    });
+
+    input.addEventListener("change", async () => {
+      const archivo = input.files[0];
+      input.value = "";
+      if (!archivo) return;
+      const dataURL = await new Promise((res) => {
+        const lector = new FileReader();
+        lector.onload = () => res(lector.result);
+        lector.readAsDataURL(archivo);
+      });
+
+      // Reduce el logo a máx. 600px para que pese poco
+      const reducido = await new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          const escala = Math.min(1, 600 / Math.max(img.width, img.height));
+          const lienzo = document.createElement("canvas");
+          lienzo.width = Math.round(img.width * escala);
+          lienzo.height = Math.round(img.height * escala);
+          lienzo.getContext("2d").drawImage(img, 0, 0, lienzo.width, lienzo.height);
+          try { res(lienzo.toDataURL("image/png", 0.92)); }
+          catch (e) { res(dataURL); }
+        };
+        img.onerror = () => res(dataURL);
+        img.src = dataURL;
+      });
+
+      empresa.logo = reducido;
+      guardarLocal();
+      ponerLogo(reducido);
+      mostrarToast("✅ Logo actualizado. Se publica al descargar el datos.js desde el panel.");
+    });
+  }
+
+  function ponerLogo(ruta) {
+    const barra = $("#logo-empresa");
+    const hero = $("#hero-logo");
+    const fallback = () => iniciales(empresa.nombre);
+    barra.src = ruta;
+    barra.onerror = () => barra.replaceWith(Object.assign(document.createElement("span"), {
+      className: "logo-fallback", textContent: fallback(),
+    }));
+    hero.src = ruta;
+    hero.onerror = () => hero.replaceWith(Object.assign(document.createElement("span"), {
+      className: "logo-fallback grande", textContent: fallback(),
+    }));
+  }
+
+  function guardarLocal() {
+    localStorage.setItem(CLAVE_ALMACEN, JSON.stringify({
+      EMPRESA: empresa, EVENTOS: eventos, CLIENTES: clientes,
+      BANNER: banner, PROMOS: promos, ADMIN_CLAVE,
+    }));
+  }
+
+  function mostrarToast(texto, ms = 4200) {
+    const t = $("#toast");
+    t.textContent = texto;
+    t.classList.remove("oculto");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.add("oculto"), ms);
+  }
+
   /* ---------- Marca / logo / nosotros ---------- */
   function pintarMarca() {
     $("#marca-nombre").textContent = empresa.nombre;
@@ -50,19 +187,7 @@
     $("#hero-eslogan").textContent = empresa.eslogan;
     document.title = `${empresa.nombre} — Eventos y Servicios`;
 
-    // Fallback si el logo no existe todavía: muestra las iniciales
-    $("#logo-empresa").addEventListener("error", function () {
-      this.replaceWith(Object.assign(document.createElement("span"), {
-        className: "logo-fallback",
-        textContent: iniciales(empresa.nombre),
-      }));
-    });
-    $("#hero-logo").addEventListener("error", function () {
-      this.replaceWith(Object.assign(document.createElement("span"), {
-        className: "logo-fallback grande",
-        textContent: iniciales(empresa.nombre),
-      }));
-    });
+    ponerLogo(empresa.logo);
 
     $("#nosotros-texto").textContent = empresa.descripcion;
 
@@ -253,11 +378,19 @@
   /* ---------- Arranque ---------- */
   document.addEventListener("DOMContentLoaded", () => {
     pintarMarca();
+    pintarBanner();
+    pintarCinta();
     pintarContacto();
     pintarEventos();
     pintarClientes();
     prepararVisor();
     prepararMenu();
+    prepararEdicionLogo();
     $("#pie-anio").textContent = new Date().getFullYear();
+
+    if (esAdmin()) {
+      document.body.classList.add("modo-admin");
+      mostrarBotonSalirAdmin();
+    }
   });
 })();

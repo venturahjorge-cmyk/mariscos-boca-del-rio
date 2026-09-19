@@ -31,6 +31,8 @@ sitio/
 | Sección | Qué hace |
 |---|---|
 | 🏢 Datos de la empresa | Nombre, eslogan, descripción, teléfono, WhatsApp, dirección, horario y **logo** |
+| 🖼️ Banner principal | Foto ancha de fondo para el inicio (opcional; si no hay, degradado azul) |
+| ⭐ Fotos destacadas | Las 5 fotos de la cinta animada debajo del título (las más publicitables) |
 | ➕ Nuevo evento | Título, fecha, descripción y **subir fotos arrastrándolas** (la primera es la portada) |
 | 🗓️ Eventos publicados | Editar o borrar eventos existentes |
 | 🤝 Clientes | Agregar empresas con logo o solo el nombre (muestra iniciales) |
@@ -71,20 +73,31 @@ gratis, sin límite de escaneos y sin suscripciones.
 
 ## 6. 🖼️ Sobre el logo y las fotos
 
-- **Logo:** el sitio busca `imagenes/logo/logo-mbr.png`. Copia ahí el archivo
-  `logo-mbr.png` que está en tu carpeta de Descargas. Si no está, el sitio muestra
-  un círculo con las iniciales **MBR** automáticamente (nada se rompe).
-  También puedes subirlo directo desde el panel (sección Datos de la empresa).
+- **Logo:** el sitio ya incluye una recreación en SVG del logotipo
+  (`imagenes/logo/logo-mbr.svg`). Si tienes el archivo original
+  `Diseño sin título.png`, puedes: (a) copiarlo como `imagenes/logo/logo-mbr.png`
+  y cambiar la ruta en `js/datos.js`, o (b) subirlo desde el panel
+  (Datos de la empresa → Logo actual), o (c) dar clic al **lápiz ✏️**
+  sobre el logo de la página e ingresar la contraseña.
+- **Lápiz ✏️ en el logo:** al darle clic pide la contraseña de administrador
+  y permite cambiar el logo directamente desde la página pública.
 - **Fotos:** el panel las comprime automáticamente a máx. 1400px para que carguen rápido.
 - Funciona bien hasta ~40 fotos dentro del `datos.js`. Si necesitas muchas más,
   súbelas a `imagenes/eventos/` en GitHub y agrega las rutas a mano.
 
-## 7. ✏️ Editar a mano (opcional)
+## 7. 🎬 Cinta de fotos promocionales (loop)
+
+Debajo del título se desplazan en loop las **5 fotos destacadas** (se duplican para
+que el movimiento sea continuo). Se pausan al pasar el mouse. Se administran desde
+el panel (⭐ Fotos destacadas). Si alguna foto falla al cargar, se quita sola del
+desfile sin romper el loop.
+
+## 8. ✏️ Editar a mano (opcional)
 
 `js/datos.js` es texto plano: puedes abrirlo con el Bloc de notas y editar
-teléfono, WhatsApp, eventos, etc. El panel y el archivo usan el mismo formato.
+teléfono, WhatsApp, eventos, banner, promos, etc. El panel y el archivo usan el mismo formato.
 
-## 8. 🖥️ Probar en tu computadora
+## 9. 🖥️ Probar en tu computadora
 
 Abre `index.html` con doble clic. Para el panel, también funciona con doble clic en `admin.html`
 (en algunos navegadores el modo archivo restringe las fotos subidas; si pasa eso, abre con
