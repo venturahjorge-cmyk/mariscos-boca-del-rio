@@ -1,0 +1,429 @@
+/* ============================================================
+   ESTILOS DEL SITIO — Mariscos Boca del Río Eventos
+   Paleta tomada del logo: azul mar, amarillo sol, rojo coral
+   ============================================================ */
+
+:root {
+  --color-fondo: #f3f9fd;
+  --color-texto: #10293e;
+  --color-primario: #1e88c7;      /* azul mar */
+  --color-primario-osc: #14639b;
+  --color-acento: #f5c518;        /* amarillo sol */
+  --color-coral: #e04b2c;         /* rojo coral (detalles) */
+  --color-oscuro: #0b2b45;
+  --color-tarjeta: #ffffff;
+  --sombra: 0 6px 24px rgba(16, 41, 62, 0.10);
+  --radio: 14px;
+  --ancho-max: 1100px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  line-height: 1.6;
+}
+
+img { max-width: 100%; display: block; }
+
+.oculto { display: none !important; }
+
+/* ---------- Barra de navegación ---------- */
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1.2rem;
+  background: rgba(243, 249, 253, 0.96);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(16, 41, 62, 0.08);
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--color-texto);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.marca img { height: 46px; width: auto; }
+
+.logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  width: 42px;
+  border-radius: 50%;
+  background: var(--color-primario);
+  color: #fff;
+  font-weight: 800;
+}
+.logo-fallback.grande { height: 84px; width: 84px; font-size: 1.6rem; }
+
+.menu { display: flex; align-items: center; gap: 1.1rem; }
+
+.menu a {
+  text-decoration: none;
+  color: var(--color-texto);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.menu a:hover { color: var(--color-primario); }
+
+.menu .boton-accion {
+  background: var(--color-primario);
+  color: #fff !important;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+}
+.menu .boton-accion:hover { background: var(--color-primario-osc); }
+
+.menu-boton {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: var(--color-texto);
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.2rem;
+  background:
+    linear-gradient(rgba(7, 34, 56, 0.78), rgba(7, 34, 56, 0.78)),
+    linear-gradient(135deg, #0b4f8a 0%, #1e88c7 55%, #2aa9e0 100%);
+  background-color: var(--color-oscuro);
+  color: #fff;
+}
+
+.hero-logo {
+  height: 120px;
+  margin: 0 auto 1.2rem;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+.hero-logo.oculto { display: none; }
+
+.hero h1 {
+  font-size: clamp(1.9rem, 5vw, 3.2rem);
+  margin-bottom: 0.6rem;
+}
+
+.hero-eslogan {
+  font-size: clamp(1.05rem, 2.5vw, 1.4rem);
+  color: var(--color-acento);
+  margin-bottom: 1.8rem;
+}
+
+.hero-botones { display: flex; gap: 0.9rem; justify-content: center; flex-wrap: wrap; }
+
+/* ---------- Botones ---------- */
+.boton {
+  display: inline-block;
+  padding: 0.75rem 1.6rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.boton:hover { transform: translateY(-2px); }
+
+.boton-primario { background: var(--color-primario); color: #fff; }
+.boton-primario:hover { background: var(--color-primario-osc); }
+
+.boton-borde { border: 2px solid currentColor; color: inherit; }
+
+.boton-whatsapp { background: #25d366; color: #fff; }
+.boton-whatsapp:hover { background: #1da851; }
+
+.boton-coral { background: var(--color-coral); color: #fff; }
+.boton-coral:hover { background: #b83a20; }
+
+.boton-chico { padding: 0.5rem 1.1rem; font-size: 0.9rem; }
+
+/* ---------- Secciones ---------- */
+.seccion {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: 4.5rem 1.2rem;
+}
+
+.seccion-oscura {
+  max-width: none;
+  background: var(--color-oscuro);
+  color: #fff;
+}
+.seccion-oscura .titulo-seccion { color: var(--color-acento); }
+
+.titulo-seccion {
+  text-align: center;
+  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  margin-bottom: 0.6rem;
+}
+
+.subtitulo-seccion {
+  text-align: center;
+  color: inherit;
+  opacity: 0.75;
+  margin-bottom: 2.6rem;
+}
+
+/* ---------- Nosotros ---------- */
+.nosotros-texto {
+  max-width: 780px;
+  margin: 0 auto 2.4rem;
+  text-align: center;
+  font-size: 1.08rem;
+  opacity: 0.9;
+}
+
+.nosotros-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+}
+
+.dato {
+  background: var(--color-tarjeta);
+  border-radius: var(--radio);
+  padding: 1.3rem 1.1rem;
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+.dato-etiqueta { font-weight: 700; color: var(--color-primario); margin-bottom: 0.25rem; }
+
+/* ---------- Eventos ---------- */
+.rejilla-eventos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.4rem;
+}
+
+.tarjeta-evento {
+  background: var(--color-tarjeta);
+  border-radius: var(--radio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  outline: none;
+  color: var(--color-texto);
+}
+.tarjeta-evento:hover,
+.tarjeta-evento:focus-visible {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(16, 41, 62, 0.18);
+}
+
+.tarjeta-foto {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, #d7ecf9, #9fcbe9);
+}
+.tarjeta-foto img { width: 100%; height: 100%; object-fit: cover; }
+
+.tarjeta-foto.sin-foto::after {
+  content: "🌊";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.tarjeta-foto-icono {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  background: rgba(11, 43, 69, 0.8);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+}
+
+.tarjeta-proxima { cursor: default; }
+.tarjeta-proxima:hover { transform: none; }
+.tarjeta-proxima-icono {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.4rem;
+  opacity: 0.75;
+}
+
+.tarjeta-cuerpo { padding: 1.1rem 1.2rem 1.3rem; }
+.tarjeta-cuerpo h3 { margin-bottom: 0.2rem; }
+.tarjeta-fecha { color: var(--color-coral); font-weight: 700; font-size: 0.88rem; }
+.tarjeta-descripcion { font-size: 0.94rem; opacity: 0.85; margin: 0.45rem 0 0.7rem; }
+.tarjeta-enlace { color: var(--color-primario); font-weight: 700; font-size: 0.9rem; }
+
+.seccion-oscura .tarjeta-evento { color: var(--color-texto); }
+
+/* ---------- Clientes ---------- */
+.rejilla-clientes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.2rem;
+}
+
+.tarjeta-cliente {
+  background: var(--color-tarjeta);
+  border-radius: var(--radio);
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.1rem;
+  box-shadow: var(--sombra);
+  transition: transform 0.18s ease;
+}
+.tarjeta-cliente:hover { transform: translateY(-4px); }
+.tarjeta-cliente img { max-height: 64px; width: auto; object-fit: contain; }
+
+.clientes-vacio {
+  text-align: center;
+  opacity: 0.7;
+  grid-column: 1 / -1;
+  padding: 1.5rem 0;
+}
+
+/* ---------- Contacto ---------- */
+.contacto-tarjeta {
+  max-width: 620px;
+  margin: 0 auto;
+  background: var(--color-tarjeta);
+  color: var(--color-texto);
+  border-radius: var(--radio);
+  padding: 2.2rem 1.8rem;
+  box-shadow: var(--sombra);
+  display: grid;
+  gap: 0.8rem;
+}
+
+.contacto-fila { font-size: 1.02rem; }
+
+.contacto-botones {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+
+.contacto-redes { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.3rem; }
+
+/* ---------- Pie ---------- */
+.pie {
+  background: #062036;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+  padding: 1.6rem 1rem;
+  font-size: 0.92rem;
+}
+
+.pie a { color: rgba(255, 255, 255, 0.45); text-decoration: none; font-size: 0.8rem; }
+.pie a:hover { color: rgba(255, 255, 255, 0.8); }
+
+/* ---------- Visor (lightbox) ---------- */
+.visor {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(4, 18, 30, 0.93);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.visor-cuerpo { max-width: min(920px, 92vw); text-align: center; }
+.visor-cuerpo img {
+  max-height: 78vh;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 10px;
+  transition: opacity 0.25s ease;
+}
+.visor-cuerpo figcaption { color: #fff; margin-top: 0.8rem; opacity: 0.85; }
+
+.visor-falta-foto {
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #fff;
+  padding: 1rem;
+}
+
+.visor-cerrar {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.visor-flecha {
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: #fff;
+  font-size: 2.4rem;
+  line-height: 1;
+  padding: 0.4rem 0.9rem;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.visor-flecha:hover { background: rgba(255, 255, 255, 0.25); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .menu-boton { display: block; }
+
+  .menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    background: var(--color-fondo);
+    padding: 1rem 1.4rem 1.4rem;
+    border-bottom: 1px solid rgba(16, 41, 62, 0.12);
+    box-shadow: var(--sombra);
+  }
+  .menu.abierto { display: flex; }
+  .menu a { padding: 0.35rem 0; }
+
+  .hero { min-height: 70vh; }
+  .visor { flex-direction: column; }
+  .visor-ant, .visor-sig { order: 2; font-size: 2rem; }
+  .visor-cerrar { top: 0.6rem; right: 0.8rem; }
+}

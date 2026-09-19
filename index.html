@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Restaurante y salón de eventos. Conoce nuestros eventos y servicios para empresas y celebraciones." />
+  <title>Nuestro Restaurante — Eventos y Servicios</title>
+  <link rel="icon" href="imagenes/logo/logo-mbr.png" type="image/png" />
+  <link rel="stylesheet" href="css/estilos.css" />
+</head>
+<body>
+
+  <!-- ================= BARRA DE NAVEGACIÓN ================= -->
+  <header class="barra">
+    <a class="marca" href="#inicio">
+      <img id="logo-empresa" src="imagenes/logo/logo-mbr.png" alt="Logo de Mariscos Boca del Río Eventos" />
+      <span id="marca-nombre">Restaurante</span>
+    </a>
+    <button class="menu-boton" id="menu-boton" aria-label="Abrir menú">☰</button>
+    <nav class="menu" id="menu">
+      <a href="#inicio">Inicio</a>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#eventos">Eventos</a>
+      <a href="#clientes">Nuestros clientes</a>
+      <a href="#contacto" class="boton-accion">Contacto</a>
+    </nav>
+  </header>
+
+  <!-- ================= PORTADA (HERO) ================= -->
+  <section id="inicio" class="hero">
+    <div class="hero-contenido">
+      <img id="hero-logo" src="imagenes/logo/logo-mbr.png" alt="" class="hero-logo" />
+      <h1 id="hero-titulo">Bienvenido a nuestro restaurante</h1>
+      <p id="hero-eslogan" class="hero-eslogan">Cocina de calidad y eventos inolvidables</p>
+      <div class="hero-botones">
+        <a href="#eventos" class="boton boton-primario">Ver nuestros eventos</a>
+        <a href="#contacto" class="boton boton-borde">Cotiza tu evento</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= NOSOTROS ================= -->
+  <section id="nosotros" class="seccion">
+    <h2 class="titulo-seccion">Quiénes somos</h2>
+    <p id="nosotros-texto" class="nosotros-texto"></p>
+    <div id="nosotros-datos" class="nosotros-datos"><!-- se llena con JS --></div>
+  </section>
+
+  <!-- ================= EVENTOS (GALERÍA) ================= -->
+  <section id="eventos" class="seccion seccion-oscura">
+    <h2 class="titulo-seccion">Eventos que hemos realizado</h2>
+    <p class="subtitulo-seccion">Haz clic en cualquier evento para ver la galería de fotografías.</p>
+    <div id="lista-eventos" class="rejilla-eventos"><!-- se llena con JS --></div>
+    <p id="sin-eventos" class="oculto">Aún no hay eventos publicados. Agrega el primero en <code>js/datos.js</code>.</p>
+  </section>
+
+  <!-- ================= LOGOS DE CLIENTES ================= -->
+  <section id="clientes" class="seccion">
+    <h2 class="titulo-seccion">Empresas que confían en nosotros</h2>
+    <p class="subtitulo-seccion">Algunas de las compañías para las que hemos caterizado sus eventos.</p>
+    <div id="lista-clientes" class="rejilla-clientes"><!-- se llena con JS --></div>
+  </section>
+
+  <!-- ================= CONTACTO ================= -->
+  <section id="contacto" class="seccion seccion-oscura">
+    <h2 class="titulo-seccion">Contáctanos</h2>
+    <div class="contacto-tarjeta">
+      <div class="contacto-fila">📍 <span id="contacto-direccion"></span></div>
+      <div class="contacto-fila">📞 <span id="contacto-telefono"></span></div>
+      <div class="contacto-fila">✉️ <span id="contacto-email"></span></div>
+      <div class="contacto-fila">🕒 <span id="contacto-horario"></span></div>
+      <div class="contacto-botones">
+        <a id="boton-whatsapp" class="boton boton-whatsapp" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+        <a id="boton-llamar" class="boton boton-borde">Llamar ahora</a>
+      </div>
+      <div id="contacto-redes" class="contacto-redes"></div>
+    </div>
+  </section>
+
+  <!-- ================= PIE DE PÁGINA ================= -->
+  <footer class="pie">
+    <p>© <span id="pie-anio"></span> <span id="pie-nombre"></span>. Todos los derechos reservados.</p>
+    <p><a href="admin.html">Acceso administrador</a></p>
+  </footer>
+
+  <!-- ================= VISOR DE FOTOS (LIGHTBOX) ================= -->
+  <div id="visor" class="visor oculto" role="dialog" aria-label="Galería de fotos del evento">
+    <button class="visor-cerrar" id="visor-cerrar" aria-label="Cerrar">✕</button>
+    <button class="visor-flecha visor-ant" id="visor-ant" aria-label="Foto anterior">‹</button>
+    <figure class="visor-cuerpo">
+      <img id="visor-imagen" src="" alt="" />
+      <div id="visor-falta" class="visor-falta-foto oculto">Foto no disponible — revisa la ruta en <code>js/datos.js</code></div>
+      <figcaption id="visor-pie"></figcaption>
+    </figure>
+    <button class="visor-flecha visor-sig" id="visor-sig" aria-label="Foto siguiente">›</button>
+  </div>
+
+  <script src="js/datos.js"></script>
+  <script src="js/funciones.js"></script>
+</body>
+</html>

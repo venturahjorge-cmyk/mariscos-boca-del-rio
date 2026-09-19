@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120">
+  <rect x="2" y="2" width="196" height="116" rx="14" fill="#ffffff" stroke="#d8c9b4" stroke-width="2"/>
+  <text x="100" y="55" font-family="Segoe UI, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#4a4a4a">EMPRESA</text>
+  <text x="100" y="80" font-family="Segoe UI, sans-serif" font-size="12" text-anchor="middle" fill="#8a8a8a">Logo de ejemplo</text>
+</svg>

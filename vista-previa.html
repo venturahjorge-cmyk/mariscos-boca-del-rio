@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VISTA PREVIA — así se verá el sitio real</title>
+  <style>
+    /* ============================================================
+       ESTILOS (copia de css/estilos.css, con rutas inline)
+       ============================================================ */
+    :root {
+      --color-fondo: #f3f9fd;
+      --color-texto: #10293e;
+      --color-primario: #1e88c7;
+      --color-primario-osc: #14639b;
+      --color-acento: #f5c518;
+      --color-oscuro: #0b2b45;
+      --color-tarjeta: #ffffff;
+      --sombra: 0 6px 24px rgba(45, 33, 24, 0.10);
+      --radio: 14px;
+      --ancho-max: 1100px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--color-fondo);
+      color: var(--color-texto);
+      line-height: 1.6;
+    }
+    img { max-width: 100%; display: block; }
+    .oculto { display: none !important; }
+
+    .aviso {
+      background: #d9a441;
+      color: #221610;
+      text-align: center;
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Barra */
+    .barra {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.7rem 1.2rem;
+      background: rgba(255, 250, 243, 0.96);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(45, 33, 24, 0.08);
+    }
+    .marca { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--color-texto); font-weight: 700; font-size: 1.05rem; }
+    .marca img { height: 42px; width: auto; }
+    .logo-fallback {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 42px; width: 42px; border-radius: 50%;
+      background: var(--color-primario); color: #fff; font-weight: 800;
+    }
+    .logo-fallback.grande { height: 70px; width: 70px; font-size: 1.4rem; }
+    .menu { display: flex; align-items: center; gap: 1.1rem; }
+    .menu a { text-decoration: none; color: var(--color-texto); font-weight: 600; font-size: 0.95rem; }
+    .menu a:hover { color: var(--color-primario); }
+    .menu .boton-accion { background: var(--color-primario); color: #fff !important; padding: 0.45rem 1rem; border-radius: 999px; }
+    .menu-boton { display: none; background: none; border: none; font-size: 1.6rem; cursor: pointer; color: var(--color-texto); }
+
+    /* Hero */
+    .hero {
+      min-height: 88vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 3rem 1.2rem;
+      background:
+        linear-gradient(rgba(34, 22, 16, 0.72), rgba(34, 22, 16, 0.72)),
+        var(--grad-hero, linear-gradient(135deg, #e8b04b, #b3452c));
+      background-color: var(--color-oscuro);
+      color: #fff;
+    }
+    .hero-logo { height: 110px; margin: 0 auto 1.2rem; filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4)); }
+    .hero-logo.oculto { display: none; }
+    .hero h1 { font-size: clamp(1.9rem, 5vw, 3.2rem); margin-bottom: 0.6rem; }
+    .hero-eslogan { font-size: clamp(1.05rem, 2.5vw, 1.4rem); color: var(--color-acento); margin-bottom: 1.8rem; }
+    .hero-botones { display: flex; gap: 0.9rem; justify-content: center; flex-wrap: wrap; }
+
+    .boton { display: inline-block; padding: 0.75rem 1.6rem; border-radius: 999px; text-decoration: none; font-weight: 700; transition: transform 0.15s ease, background 0.15s ease; }
+    .boton:hover { transform: translateY(-2px); }
+    .boton-primario { background: var(--color-primario); color: #fff; }
+    .boton-primario:hover { background: var(--color-primario-osc); }
+    .boton-borde { border: 2px solid currentColor; color: inherit; }
+    .boton-whatsapp { background: #25d366; color: #fff; }
+    .boton-whatsapp:hover { background: #1da851; }
+    .boton-chico { padding: 0.5rem 1.1rem; font-size: 0.9rem; }
+
+    .seccion { max-width: var(--ancho-max); margin: 0 auto; padding: 4.5rem 1.2rem; }
+    .seccion-oscura { max-width: none; background: var(--color-oscuro); color: #fff; }
+    .seccion-oscura .titulo-seccion { color: var(--color-acento); }
+    .titulo-seccion { text-align: center; font-size: clamp(1.6rem, 3.5vw, 2.3rem); margin-bottom: 0.6rem; }
+    .subtitulo-seccion { text-align: center; opacity: 0.75; margin-bottom: 2.6rem; }
+
+    .nosotros-texto { max-width: 780px; margin: 0 auto 2.4rem; text-align: center; font-size: 1.08rem; opacity: 0.9; }
+    .nosotros-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; }
+    .dato { background: var(--color-tarjeta); border-radius: var(--radio); padding: 1.3rem 1.1rem; text-align: center; box-shadow: var(--sombra); }
+    .dato-etiqueta { font-weight: 700; color: var(--color-primario); margin-bottom: 0.25rem; }
+
+    .rejilla-eventos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.4rem; }
+    .tarjeta-evento { background: var(--color-tarjeta); border-radius: var(--radio); overflow: hidden; box-shadow: var(--sombra); cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease; outline: none; color: var(--color-texto); }
+    .tarjeta-evento:hover, .tarjeta-evento:focus-visible { transform: translateY(-6px); box-shadow: 0 12px 32px rgba(45, 33, 24, 0.18); }
+    .tarjeta-foto { position: relative; aspect-ratio: 4 / 3; background: linear-gradient(135deg, #e8d9c5, #d9c3a5); }
+    .tarjeta-foto img { width: 100%; height: 100%; object-fit: cover; }
+    .tarjeta-foto.sin-foto::after { content: "📷"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.45; }
+    .tarjeta-foto-icono { position: absolute; right: 0.7rem; bottom: 0.7rem; background: rgba(34, 22, 16, 0.78); color: #fff; font-size: 0.78rem; padding: 0.28rem 0.6rem; border-radius: 999px; }
+    .tarjeta-cuerpo { padding: 1.1rem 1.2rem 1.3rem; }
+    .tarjeta-cuerpo h3 { margin-bottom: 0.2rem; }
+    .tarjeta-fecha { color: var(--color-primario); font-weight: 700; font-size: 0.88rem; }
+    .tarjeta-descripcion { font-size: 0.94rem; opacity: 0.85; margin: 0.45rem 0 0.7rem; }
+    .tarjeta-enlace { color: var(--color-primario); font-weight: 700; font-size: 0.9rem; }
+
+    .rejilla-clientes { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1.2rem; }
+    .tarjeta-cliente { background: var(--color-tarjeta); border-radius: var(--radio); min-height: 110px; display: flex; align-items: center; justify-content: center; padding: 1.1rem; box-shadow: var(--sombra); transition: transform 0.18s ease; }
+    .tarjeta-cliente:hover { transform: translateY(-4px); }
+    .tarjeta-cliente img { max-height: 64px; width: auto; object-fit: contain; }
+
+    .contacto-tarjeta { max-width: 620px; margin: 0 auto; background: var(--color-tarjeta); color: var(--color-texto); border-radius: var(--radio); padding: 2.2rem 1.8rem; box-shadow: var(--sombra); display: grid; gap: 0.8rem; }
+    .contacto-fila { font-size: 1.02rem; }
+    .contacto-botones { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.6rem; }
+    .contacto-redes { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.3rem; }
+
+    .pie { background: #17100b; color: rgba(255, 255, 255, 0.75); text-align: center; padding: 1.6rem 1rem; font-size: 0.92rem; }
+
+    .visor { position: fixed; inset: 0; z-index: 100; background: rgba(15, 10, 7, 0.93); display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+    .visor-cuerpo { max-width: min(920px, 92vw); text-align: center; }
+    .visor-cuerpo img { max-height: 78vh; max-width: 100%; margin: 0 auto; border-radius: 10px; transition: opacity 0.25s ease; }
+    .visor-cuerpo figcaption { color: #fff; margin-top: 0.8rem; opacity: 0.85; }
+    .visor-falta-foto { height: 320px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.08); border-radius: 10px; color: #fff; padding: 1rem; }
+    .visor-cerrar { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; }
+    .visor-flecha { background: rgba(255, 255, 255, 0.12); border: none; color: #fff; font-size: 2.4rem; line-height: 1; padding: 0.4rem 0.9rem; border-radius: 12px; cursor: pointer; }
+    .visor-flecha:hover { background: rgba(255, 255, 255, 0.25); }
+
+    @media (max-width: 760px) {
+      .menu-boton { display: block; }
+      .menu { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: flex-start; background: var(--color-fondo); padding: 1rem 1.4rem 1.4rem; border-bottom: 1px solid rgba(45, 33, 24, 0.12); box-shadow: var(--sombra); }
+      .menu.abierto { display: flex; }
+      .menu a { padding: 0.35rem 0; }
+      .hero { min-height: 70vh; }
+      .visor { flex-direction: column; }
+      .visor-ant, .visor-sig { order: 2; font-size: 2rem; }
+      .visor-cerrar { top: 0.6rem; right: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="aviso">⚠️ VISTA PREVIA — así se ve el sitio real con la marca y colores de Mariscos Boca del Río. El sitio publicable está en <code>index.html</code> + <code>admin.html</code>.</div>
+
+  <header class="barra">
+    <a class="marca" href="#inicio">
+      <span class="logo-fallback">MB</span>
+      <span id="marca-nombre">Restaurante</span>
+    </a>
+    <button class="menu-boton" id="menu-boton" aria-label="Abrir menú">☰</button>
+    <nav class="menu" id="menu">
+      <a href="#inicio">Inicio</a>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#eventos">Eventos</a>
+      <a href="#clientes">Nuestros clientes</a>
+      <a href="#contacto" class="boton-accion">Contacto</a>
+    </nav>
+  </header>      <section id="inicio" class="hero" style="--grad-hero: linear-gradient(135deg, #0b4f8a 0%, #1e88c7 55%, #2aa9e0 100%)">
+    <div class="hero-contenido">
+      <h1 id="hero-titulo">Bienvenido a nuestro restaurante</h1>
+      <p id="hero-eslogan" class="hero-eslogan">Cocina de calidad y eventos inolvidables</p>
+      <div class="hero-botones">
+        <a href="#eventos" class="boton boton-primario">Ver nuestros eventos</a>
+        <a href="#contacto" class="boton boton-borde">Cotiza tu evento</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="nosotros" class="seccion">
+    <h2 class="titulo-seccion">Quiénes somos</h2>
+    <p id="nosotros-texto" class="nosotros-texto"></p>
+    <div id="nosotros-datos" class="nosotros-datos"></div>
+  </section>
+
+  <section id="eventos" class="seccion seccion-oscura">
+    <h2 class="titulo-seccion">Eventos que hemos realizado</h2>
+    <p class="subtitulo-seccion">Haz clic en cualquier evento para ver la galería de fotografías.</p>
+    <div id="lista-eventos" class="rejilla-eventos"></div>
+  </section>
+
+  <section id="clientes" class="seccion">
+    <h2 class="titulo-seccion">Empresas que confían en nosotros</h2>
+    <p class="subtitulo-seccion">Algunas de las compañías para las que hemos caterizado sus eventos.</p>
+    <div id="lista-clientes" class="rejilla-clientes"></div>
+  </section>
+
+  <section id="contacto" class="seccion seccion-oscura">
+    <h2 class="titulo-seccion">Contáctanos</h2>
+    <div class="contacto-tarjeta">
+      <div class="contacto-fila">📍 <span id="contacto-direccion"></span></div>
+      <div class="contacto-fila">📞 <span id="contacto-telefono"></span></div>
+      <div class="contacto-fila">✉️ <span id="contacto-email"></span></div>
+      <div node-id="horario" class="contacto-fila">🕒 <span id="contacto-horario"></span></div>
+      <div class="contacto-botones">
+        <a id="boton-whatsapp" class="boton boton-whatsapp" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+        <a id="boton-llamar" class="boton boton-borde">Llamar ahora</a>
+      </div>
+      <div id="contacto-redes" class="contacto-redes"></div>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <p>© <span id="pie-anio"></span> <span id="pie-nombre"></span>. Todos los derechos reservados.</p>
+  </footer>
+
+  <div id="visor" class="visor oculto" role="dialog" aria-label="Galería de fotos del evento">
+    <button class="visor-cerrar" id="visor-cerrar" aria-label="Cerrar">✕</button>
+    <button class="visor-flecha visor-ant" id="visor-ant" aria-label="Foto anterior">‹</button>
+    <figure class="visor-cuerpo">
+      <img id="visor-imagen" src="" alt="" />
+      <div id="visor-falta" class="visor-falta-foto oculto">Foto no disponible</div>
+      <figcaption id="visor-pie"></figcaption>
+    </figure>
+    <button class="visor-flecha visor-sig" id="visor-sig" aria-label="Foto siguiente">›</button>
+  </div>
+
+  <script>
+    /* ============================================================
+       DATOS (copia de js/datos.js) — SVG convertidos a data URI
+       ============================================================ */
+    const svgFoto = (c1, c2, n) => {
+      const s = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='800' height='600' fill='url(%23g)'/><text x='400' y='290' font-family='Segoe UI, sans-serif' font-size='40' font-weight='bold' text-anchor='middle' fill='white'>Foto de ejemplo ${n}</text><text x='400' y='340' font-family='Segoe UI, sans-serif' font-size='22' text-anchor='middle' fill='rgba(255,255,255,0.85)'>Reemplaza con fotografías reales</text></svg>`;
+      return "data:image/svg+xml," + s.replace(/#/g, "%23").replace(/'/g, "%27");
+    };
+    const LOGO = "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><circle cx='60' cy='60' r='56' fill='#1e88c7'/><circle cx='60' cy='60' r='48' fill='#f3f9fd'/><text x='60' y='74' font-family='Georgia, serif' font-size='34' font-weight='bold' text-anchor='middle' fill='#1e88c7'>MB</text><text x='60' y='96' font-family='Segoe UI, sans-serif' font-size='11' text-anchor='middle' fill='#e04b2c'>BOCA DEL RÍO</text></svg>");
+
+    const EMPRESA = {
+      nombre: "Mariscos Boca del Río Eventos",
+      eslogan: "El sabor del mar en tus eventos más importantes",
+      descripcion: "Somos un restaurante de mariscos con amplia experiencia en la organización de eventos: banquetes empresariales, bodas, XV años y celebraciones. Llevamos el auténtico sabor del mar a tu evento con menús a la medida, montaje profesional y atención personalizada.",
+      logo: LOGO,
+      datos: [
+        { etiqueta: "🦐 Especialidad", valor: "Mariscos y banquetes del mar" },
+        { etiqueta: "🎉 Eventos", valor: "Empresariales, bodas, XV años, cumpleaños" },
+        { etiqueta: "👥 Capacidad", valor: "Hasta 200 invitados" },
+        { etiqueta: "📅 Experiencia", valor: "Más de 15 años" },
+      ],
+      contacto: {
+        direccion: "Tepic No. 47, Col. Progreso",
+        telefono: "2281615559",
+        email: "",
+        horario: "Horario por confirmar",
+        whatsapp: "522281615559",
+        redes: [
+          { nombre: "Facebook", url: "#" },
+          { nombre: "Instagram", url: "#" },
+        ],
+      },
+    };
+
+    const EVENTOS = [
+      {
+        titulo: "Boda Ana & Carlos",
+        fecha: "Junio 2025",
+        descripcion: "Recepción con banquete para 150 invitados.",
+        portada: svgFoto("#e8b04b", "#b3452c", 1),
+        fotos: [
+          { src: svgFoto("#e8b04b", "#b3452c", 1), pie: "Montaje principal" },
+          { src: svgFoto("#7a9e6f", "#2f5d3a", 2), pie: "Mesa de honor" },
+          { src: svgFoto("#5b7fa6", "#2c3e60", 3), pie: "Brindis" },
+          { src: svgFoto("#c96f8e", "#7c2d4e", 4), pie: "Postres" },
+        ],
+      },
+      {
+        titulo: "Convención Anual Grupo Axo",
+        fecha: "Mayo 2025",
+        descripcion: "Coffe break y comida para 90 colaboradores.",
+        portada: svgFoto("#7a9e6f", "#2f5d3a", 2),
+        fotos: [
+          { src: svgFoto("#7a9e6f", "#2f5d3a", 2), pie: "Salón montado" },
+          { src: svgFoto("#9b6bb3", "#4a2d6e", 5), pie: "Buffet" },
+        ],
+      },
+      {
+        titulo: "XV Años de Valentina",
+        fecha: "Abril 2025",
+        descripcion: "Celebración con menú de tres tiempos y torre de postres.",
+        portada: svgFoto("#5b7fa6", "#2c3e60", 3),
+        fotos: [
+          { src: svgFoto("#5b7fa6", "#2c3e60", 3), pie: "Entrada de la quinceañera" },
+          { src: svgFoto("#c96f8e", "#7c2d4e", 4), pie: "Mesa de postres" },
+          { src: svgFoto("#e8b04b", "#b3452c", 1), pie: "Pista de baile" },
+        ],
+      },
+    ];
+
+    const CLIENTES = ["Empresa Ejemplo A", "Empresa Ejemplo B", "Empresa Ejemplo C", "Empresa Ejemplo D", "Empresa Ejemplo E", "Empresa Ejemplo F"];
+
+    /* ============================================================
+       FUNCIONES (copia de js/funciones.js)
+       ============================================================ */
+    (function () {
+      "use strict";
+      const $ = (sel) => document.querySelector(sel);
+
+      const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      function pintarMarca() {
+        $("#marca-nombre").textContent = EMPRESA.nombre;
+        $("#pie-nombre").textContent = EMPRESA.nombre;
+        $("#hero-titulo").textContent = "Bienvenido a " + EMPRESA.nombre;
+        $("#hero-eslogan").textContent = EMPRESA.eslogan;
+        document.title = EMPRESA.nombre + " — Eventos y Servicios";
+        $("#nosotros-texto").textContent = EMPRESA.descripcion;
+        $("#nosotros-datos").innerHTML = EMPRESA.datos.map((d) =>
+          '<div class="dato"><div class="dato-etiqueta">' + esc(d.etiqueta) + '</div><div class="dato-valor">' + esc(d.valor) + "</div></div>"
+        ).join("");
+      }
+
+      function pintarContacto() {
+        const c = EMPRESA.contacto;
+        document.getElementById("contacto-direccion").textContent = c.direccion;
+        document.getElementById("contacto-telefono").textContent = c.telefono;
+        document.getElementById("contacto-horario").textContent = c.horario;
+        const filaEmail = document.getElementById("contacto-email").closest(".contacto-fila");
+        if (c.email) {
+          document.getElementById("contacto-email").textContent = c.email;
+          filaEmail.classList.remove("oculto");
+        } else {
+          filaEmail.classList.add("oculto");
+        }
+        const tel = c.telefono.replace(/\D/g, "");
+        const telLada = tel.length === 10 ? "52" + tel : tel;
+        document.getElementById("boton-llamar").href = "tel:+" + telLada;
+        document.getElementById("boton-whatsapp").href = "https://wa.me/" + c.whatsapp.replace(/\D/g, "") + "?text=" + encodeURIComponent("Hola, quiero información sobre un evento 🎉");
+        document.getElementById("contacto-redes").innerHTML = (c.redes || []).filter((r) => r.url && r.url !== "#").map((r) =>
+          '<a href="' + esc(r.url) + '" class="boton boton-borde boton-chico">' + esc(r.nombre) + "</a>"
+        ).join("");
+      }
+
+      let indiceVisor = 0, fotosActuales = [];
+
+      function pintarEventos() {
+        $("#lista-eventos").innerHTML = EVENTOS.map((ev, i) =>
+          '<article class="tarjeta-evento" data-indice="' + i + '" tabindex="0" role="button">' +
+          '<div class="tarjeta-foto"><img src="' + ev.portada + '" alt="' + esc(ev.titulo) + '" loading="lazy"/><span class="tarjeta-foto-icono">📷</span></div>' +
+          '<div class="tarjeta-cuerpo"><h3>' + esc(ev.titulo) + "</h3>" +
+          '<p class="tarjeta-fecha">' + esc(ev.fecha) + "</p>" +
+          '<p class="tarjeta-descripcion">' + esc(ev.descripcion) + "</p>" +
+          '<span class="tarjeta-enlace">Ver galería →</span></div></article>'
+        ).join("");
+        document.querySelectorAll(".tarjeta-evento").forEach((t) => {
+          t.addEventListener("click", () => abrirVisor(Number(t.dataset.indice)));
+          t.addEventListener("keydown", (e) => { if (e.key === "Enter") abrirVisor(Number(t.dataset.indice)); });
+        });
+      }
+
+      function abrirVisor(i) {
+        fotosActuales = EVENTOS[i].fotos;
+        indiceVisor = 0;
+        mostrarFoto();
+        $("#visor").classList.remove("oculto");
+        document.body.style.overflow = "hidden";
+      }
+      function mostrarFoto() {
+        const foto = fotosActuales[indiceVisor];
+        const img = $("#visor-imagen");
+        const falta = $("#visor-falta");
+        falta.classList.add("oculto");
+        img.style.opacity = 0;
+        img.onload = () => { img.style.opacity = 1; };
+        img.onerror = function () { this.removeAttribute("src"); this.classList.add("oculto"); falta.classList.remove("oculto"); };
+        img.classList.remove("oculto");
+        img.src = foto.src;
+        img.alt = foto.pie || "";
+        $("#visor-pie").textContent = foto.pie || "";
+        const hayVarias = fotosActuales.length > 1;
+        $("#visor-ant").style.visibility = hayVarias ? "visible" : "hidden";
+        $("#visor-sig").style.visibility = hayVarias ? "visible" : "hidden";
+      }
+      function siguienteFoto() { indiceVisor = (indiceVisor + 1) % fotosActuales.length; mostrarFoto(); }
+      function fotoAnterior() { indiceVisor = (indiceVisor - 1 + fotosActuales.length) % fotosActuales.length; mostrarFoto(); }
+      function cerrarVisor() { $("#visor").classList.add("oculto"); document.body.style.overflow = ""; }
+
+      function pintarClientes() {
+        $("#lista-clientes").innerHTML = CLIENTES.map((n) =>
+          '<div class="tarjeta-cliente"><img alt="Logo de ' + esc(n) + '" src="' + LOGO + '"/></div>'
+        ).join("");
+      }
+
+      function prepararVisor() {
+        $("#visor-cerrar").addEventListener("click", cerrarVisor);
+        $("#visor-sig").addEventListener("click", siguienteFoto);
+        $("#visor-ant").addEventListener("click", fotoAnterior);
+        $("#visor").addEventListener("click", (e) => { if (e.target === $("#visor")) cerrarVisor(); });
+        document.addEventListener("keydown", (e) => {
+          if ($("#visor").classList.contains("oculto")) return;
+          if (e.key === "Escape") cerrarVisor();
+          if (e.key === "ArrowRight") siguienteFoto();
+          if (e.key === "ArrowLeft") fotoAnterior();
+        });
+      }
+
+      function prepararMenu() {
+        const boton = $("#menu-boton");
+        const menu = $("#menu");
+        boton.addEventListener("click", () => menu.classList.toggle("abierto"));
+        menu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => menu.classList.remove("abierto")));
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        pintarMarca(); pintarContacto(); pintarEventos(); pintarClientes(); prepararVisor(); prepararMenu();
+        $("#pie-anio").textContent = new Date().getFullYear();
+      });
+    })();
+  </script>
+</body>
+</html>
