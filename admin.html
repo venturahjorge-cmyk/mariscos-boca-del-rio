@@ -187,7 +187,7 @@
         <h2>🏢 Datos de la empresa</h2>
         <label>Logo actual</label>
         <div id="zona-logo" class="zona-fotos" style="padding: 1rem;" role="button" tabindex="0" aria-label="Cambiar logo">
-          <img id="vista-logo" src="imagenes/logo/logo-mbr.png" alt="Logo actual"
+          <img id="vista-logo" src="imagenes/logo/logo-mbr.svg" alt="Logo actual"
                style="height: 80px; margin: 0 auto; object-fit: contain;"
                onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAAAACw=';this.style.visibility='hidden'" />
           <p><strong>Haz clic o arrastra</strong> para cambiar el logo (PNG o JPG)</p>
@@ -407,21 +407,23 @@
       }
 
       /* ================= Empresa ================= */
+      const LOGO_RUTA_POR_DEFECTO = "imagenes/logo/logo-mbr.svg";
+
       function pintarLogoActual() {
         const vista = $("#vista-logo");
-        if (empresa.logo && empresa.logo !== "imagenes/logo/logo-mbr.png") {
+        if (empresa.logo && empresa.logo !== LOGO_RUTA_POR_DEFECTO) {
           vista.src = empresa.logo;
           vista.style.visibility = "visible";
           vista.onerror = () => { vista.style.visibility = "hidden"; };
         } else {
-          // Logo por defecto: funciona solo si el archivo existe en imagenes/logo/
+          // Logo por defecto: se muestra solo si el archivo existe en imagenes/logo/
           vista.style.visibility = "hidden";
           const prueba = new Image();
           prueba.onload = () => {
-            vista.src = "imagenes/logo/logo-mbr.png";
+            vista.src = LOGO_RUTA_POR_DEFECTO;
             vista.style.visibility = "visible";
           };
-          prueba.src = "imagenes/logo/logo-mbr.png";
+          prueba.src = LOGO_RUTA_POR_DEFECTO;
         }
       }
 
