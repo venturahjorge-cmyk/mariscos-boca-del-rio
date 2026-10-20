@@ -25,7 +25,7 @@ export default {async fetch(request,env){try{
   if(entry&&entry.blocked_until>now)return json({error:'Demasiados intentos. Intenta de nuevo en 15 minutos.'},429,{'Retry-After':String(Math.ceil((entry.blocked_until-now)/1000))});
   const data=await safeJson(request);
   const candidate=String(data?.password||'');
-  if(!/^\\d{4,6}$/.test(candidate)||candidate!==env.ADMIN_PASSWORD){
+  if(!/^\d{4,6}$/.test(candidate)||candidate!==env.ADMIN_PASSWORD){
    const attempts=(entry?.blocked_until>now||!entry?.blocked_until?Number(entry?.attempts||0):0)+1;
    const blockedUntil=attempts>=5?now+15*60*1000:0;
    await env.DB.prepare('INSERT INTO admin_login_limits (client,attempts,blocked_until) VALUES (?,?,?) ON CONFLICT(client) DO UPDATE SET attempts=excluded.attempts,blocked_until=excluded.blocked_until').bind(client,attempts,blockedUntil).run();
