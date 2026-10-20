@@ -3,7 +3,8 @@ const API='https://mariscos-eventos-api.venturahjorge.workers.dev',modules=['cin
 const IDLE_MS=5*60*1000;let lastActivity=Number(localStorage.getItem('mbr_admin_last_activity')||0);
 function forgetSession(){token='';localStorage.removeItem('mbr_admin_session');localStorage.removeItem('mbr_admin_last_activity');document.getElementById('workspace').hidden=true;document.getElementById('login').hidden=false;}
 async function idleLogout(){if(!token)return;try{await request('/api/admin/logout','POST')}catch{}forgetSession()}
-function recordActivity(){if(!token||document.getElementById('workspace').hidden)return;lastActivity=Date.now();localStorage.setItem('mbr_admin_last_activity',String(lastActivity))}
+let lastServerTouch=0;
+function recordActivity(){if(!token||document.getElementById('workspace').hidden)return;lastActivity=Date.now();localStorage.setItem('mbr_admin_last_activity',String(lastActivity));if(Date.now()-lastServerTouch>30000){lastServerTouch=Date.now();request('/api/admin/session/touch','POST').catch(()=>forgetSession())}}
 for(const eventName of ['pointerdown','keydown','input','touchstart'])document.addEventListener(eventName,recordActivity,{passive:true});
 setInterval(async()=>{if(!token)return;if(Date.now()-lastActivity>=IDLE_MS){await idleLogout();return}try{await request('/api/admin/session')}catch{forgetSession()}},15000);
 document.addEventListener('visibilitychange',()=>{if(token&&!document.hidden&&Date.now()-lastActivity>=IDLE_MS)idleLogout()});
