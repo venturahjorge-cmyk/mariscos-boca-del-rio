@@ -2,13 +2,13 @@ const corsHeaders={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Metho
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=utf-8',...corsHeaders,...extra}});
 const safeJson=async request=>{try{return await request.json()}catch{return null}};
 async function signature(s,key){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),'HMAC',{name:'HMAC',hash:'SHA-256'},false,['sign']);const buf=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(s));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-const credentialsTable=env=>env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_credentials (username TEXT PRIMARY KEY,password_hash TEXT NOT NULL,must_change INTEGER NOT NULL DEFAULT 1)').run();
+const credentialsTable=async()=>{};
 const pinHash=(pin,env)=>signature('admin-pin:'+pin,env.ADMIN_SECRET);
-const sessionTable=env=>env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_active INTEGER NOT NULL DEFAULT 0)').run();
+const sessionTable=async()=>{};
 async function authenticated(request,env){if(!env.ADMIN_SECRET)return false;const value=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();if(!/^[a-f0-9]{64}$/.test(value))return false;const digest=await signature('session:'+value,env.ADMIN_SECRET);const now=Date.now();const row=await env.DB.prepare('SELECT last_active FROM admin_sessions WHERE token_hash=?').bind(digest).first();if(!row||row.last_active<=now-300000)return false;if(request.method==='POST'&&new URL(request.url).pathname==='/api/admin/session/touch'){await env.DB.prepare('UPDATE admin_sessions SET last_active=? WHERE token_hash=?').bind(now,digest).run()}return true;}
 function validQuote(v){return v && String(v.name||'').trim().length>=2 && /^[0-9+()\s-]{8,22}$/.test(String(v.phone||'')) && String(v.type||'').length>0 && /^\d{4}-\d{2}-\d{2}$/.test(String(v.event_date||'')) && Number(v.guests)>=1 && Number(v.guests)<=50000 && String(v.notes||'').length<=2500}
 export default {async fetch(request,env){try{
- const url=new URL(request.url),p=url.pathname;
+ const url=new URL(request.url),p=url.pathname;let stage='route';
  if(request.method==='OPTIONS')return new Response(null,{headers:corsHeaders});
  if(p==='/api/health')return json({ok:true,service:'MBR Eventos API',database:!!env.DB,images:!!env.IMAGES});
  if(!env.DB)return json({error:'Base de datos no vinculada'},503);
@@ -19,15 +19,15 @@ export default {async fetch(request,env){try{
   const q=await env.DB.prepare('INSERT INTO quotes (name,phone,email,type,event_date,guests,notes) VALUES (?,?,?,?,?,?,?)').bind(String(v.name).trim().slice(0,120),String(v.phone).slice(0,22),String(v.email||'').slice(0,200),String(v.type).slice(0,80),String(v.event_date),Number(v.guests),String(v.notes||'').slice(0,2500)).run();
   const id=q.meta.last_row_id;return json({ok:true,id,folio:'MBR-'+String(id).padStart(6,'0')},201)
  }
- if(p==='/api/admin/login'&&request.method==='POST'){
+ if(p==='/api/admin/login'&&request.method==='POST'){stage='login-start';
   if(!env.ADMIN_PASSWORD||!env.ADMIN_SECRET)return json({error:'Acceso en configuración'},503);
   await credentialsTable(env);const stored=await env.DB.prepare("SELECT password_hash,must_change FROM admin_credentials WHERE username='Administrador'").first();
   const ip=request.headers.get('CF-Connecting-IP')||'unknown';
   const client=await signature('admin-login:'+ip,env.ADMIN_SECRET);
-  await env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_login_limits (client TEXT PRIMARY KEY, attempts INTEGER NOT NULL DEFAULT 0, blocked_until INTEGER NOT NULL DEFAULT 0)').run();
-  const now=Date.now(),entry=await env.DB.prepare('SELECT attempts,blocked_until FROM admin_login_limits WHERE client=?').bind(client).first();
+  
+  stage='login-limits';const now=Date.now(),entry=await env.DB.prepare('SELECT attempts,blocked_until FROM admin_login_limits WHERE client=?').bind(client).first();
   if(entry&&entry.blocked_until>now)return json({error:'Demasiados intentos. Intenta de nuevo en 15 minutos.'},429,{'Retry-After':String(Math.ceil((entry.blocked_until-now)/1000))});
-  const data=await safeJson(request);
+  stage='login-payload';const data=await safeJson(request);
   const candidate=String(data?.password||'');
   if(!/^\d{4,6}$/.test(candidate)||(stored?await pinHash(candidate,env)!==stored.password_hash:candidate!==env.ADMIN_PASSWORD)){
    const attempts=(entry?.blocked_until>now||!entry?.blocked_until?Number(entry?.attempts||0):0)+1;
@@ -36,7 +36,7 @@ export default {async fetch(request,env){try{
    return json({error:blockedUntil?'Demasiados intentos. Intenta de nuevo en 15 minutos.':'Credenciales inválidas'},blockedUntil?429:401);
   }
   await env.DB.prepare('DELETE FROM admin_login_limits WHERE client=?').bind(client).run();
-  const bytes=crypto.getRandomValues(new Uint8Array(32));const token=[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');const digest=await signature('session:'+token,env.ADMIN_SECRET);await sessionTable(env);await env.DB.prepare('INSERT INTO admin_sessions(token_hash,last_active) VALUES(?,?)').bind(digest,Date.now()).run();return json({token,mustChange:stored?!!stored.must_change:true})
+  stage='login-session';const bytes=crypto.getRandomValues(new Uint8Array(32));const token=[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');const digest=await signature('session:'+token,env.ADMIN_SECRET);await sessionTable(env);await env.DB.prepare('INSERT INTO admin_sessions(token_hash,last_active) VALUES(?,?)').bind(digest,Date.now()).run();return json({token,mustChange:stored?!!stored.must_change:true})
  }
  if(p.startsWith('/api/admin/')){
   await sessionTable(env);
@@ -54,4 +54,4 @@ export default {async fetch(request,env){try{
   if(p==='/api/admin/quotes/notes'&&request.method==='GET'){const r=await env.DB.prepare('SELECT * FROM quote_notes WHERE quote_id=? ORDER BY id DESC').bind(Number(url.searchParams.get('id'))).all();return json(r.results||[])}
  }
  return json({error:'Ruta no encontrada'},404)
- }catch(e){return json({error:'Error interno del servidor'},500)} }};
+ }catch(e){console.error('MBR API error',stage,e);return json({error:'Error interno del servidor',code:stage},500)} }};
