@@ -1,7 +1,7 @@
 const corsHeaders={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Authorization'};
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=utf-8',...corsHeaders,...extra}});
 const safeJson=async request=>{try{return await request.json()}catch{return null}};
-async function signature(s,key){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),'HMAC',{name:'HMAC',hash:'SHA-256'},false,['sign']);const buf=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(s));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function signature(s,key){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),{name:'HMAC',hash:'SHA-256'},false,['sign']);const buf=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(s));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
 const credentialsTable=async()=>{};
 const pinHash=(pin,env)=>signature('admin-pin:'+pin,env.ADMIN_SECRET);
 const sessionTable=async()=>{};
