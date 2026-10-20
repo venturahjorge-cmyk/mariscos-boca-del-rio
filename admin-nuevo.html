@@ -91,13 +91,29 @@ async function renderQuotes(root){
   const refreshFilters=()=>{filtered=quotes.filter(matches);count.textContent=filtered.length+' de '+quotes.length+' solicitudes';tbody.querySelectorAll('tr').forEach((tr,i)=>{tr.hidden=!matches(quotes[i])});exportBtn.disabled=!filtered.length};
   customer.oninput=refreshFilters;status.onchange=refreshFilters;from.onchange=refreshFilters;to.onchange=refreshFilters;
   reset.onclick=()=>{customer.value='';status.value='';from.value='';to.value='';refreshFilters()};
-  exportBtn.onclick=()=>{
-    const headers=['Folio','Fecha de solicitud (UTC)','Cliente','Teléfono','Correo','Tipo de evento','Fecha del evento','Invitados','Estatus','Comentarios iniciales'];
-    const safe=value=>{let str=String(value??'').replace(/\r?\n/g,' ').trim();if(/^[=+@\-\t\r]/.test(str))str="'"+str;return '"'+str.replace(/"/g,'""')+'"'};
-    const data=filtered.map(q=>['MBR-'+String(q.id).padStart(6,'0'),q.created_at,q.name,q.phone,q.email,q.type,q.event_date,q.guests,q.status,q.notes]);
-    const csv='\uFEFF'+[headers,...data].map(row=>row.map(safe).join(';')).join('\r\n');
-    const file=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    const url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download='MBR-cotizaciones-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  exportBtn.textContent='Descargar Excel (.xlsx)';
+  exportBtn.onclick=async()=>{
+    if(!filtered.length)return;
+    exportBtn.disabled=true;exportBtn.textContent='Preparando Excel...';
+    try{
+      if(!window.XLSX){
+        await new Promise((resolve,reject)=>{
+          const script=document.createElement('script');
+          script.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+          script.onload=resolve;script.onerror=()=>reject(new Error('No se pudo cargar el generador de Excel. Comprueba tu conexión.'));
+          document.head.appendChild(script);
+        });
+      }
+      const headers=['Folio','Fecha de solicitud (UTC)','Cliente','Teléfono','Correo','Tipo de evento','Fecha del evento','Invitados','Estatus','Comentarios iniciales'];
+      const rows=filtered.map(q=>['MBR-'+String(q.id).padStart(6,'0'),q.created_at||'',q.name||'',q.phone||'',q.email||'',q.type||'',q.event_date||'',Number(q.guests)||0,q.status||'',q.notes||'']);
+      const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+      ws['!cols']=[{wch:17},{wch:23},{wch:30},{wch:18},{wch:30},{wch:26},{wch:18},{wch:12},{wch:17},{wch:55}];
+      ws['!autofilter']={ref:'A1:J'+(rows.length+1)};
+      for(const addr of Object.keys(ws)){if(addr[0]==='!')continue;const cell=ws[addr];if(cell.t==='s'&&/^[=+@\\-\\t\\r]/.test(cell.v))cell.v="'"+cell.v;}
+      const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,ws,'Cotizaciones');
+      XLSX.writeFile(workbook,'MBR-cotizaciones-'+new Date().toISOString().slice(0,10)+'.xlsx');
+    }catch(err){alert('No fue posible descargar el Excel: '+err.message)}
+    finally{exportBtn.disabled=!filtered.length;exportBtn.textContent='Descargar Excel (.xlsx)'}
   };
   const wrap=el('div',{},root);wrap.style.overflowX='auto';
   const table=el('table',{},wrap),thead=el('thead',{},table),head=el('tr',{},thead);
