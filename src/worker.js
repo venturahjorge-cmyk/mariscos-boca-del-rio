@@ -3,7 +3,7 @@ const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status
 const safeJson=async request=>{try{return await request.json()}catch{return null}};
 async function signature(s,key){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),'HMAC',{name:'HMAC',hash:'SHA-256'},false,['sign']);const buf=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(s));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
 const sessionTable=env=>env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_active INTEGER NOT NULL DEFAULT 0)').run();
-async function authenticated(request,env){if(!env.ADMIN_SECRET)return false;const value=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();if(!/^[a-f0-9]{64}$/.test(value))return false;const digest=await signature('session:'+value,env.ADMIN_SECRET);const now=Date.now();const r=await env.DB.prepare('UPDATE admin_sessions SET last_active=? WHERE token_hash=? AND last_active>?').bind(now,digest,now-300000).run();return Number(r.meta?.changes||0)>0;}
+async function authenticated(request,env){if(!env.ADMIN_SECRET)return false;const value=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();if(!/^[a-f0-9]{64}$/.test(value))return false;const digest=await signature('session:'+value,env.ADMIN_SECRET);const now=Date.now();const row=await env.DB.prepare('SELECT last_active FROM admin_sessions WHERE token_hash=?').bind(digest).first();if(!row||row.last_active<=now-300000)return false;if(request.method==='POST'&&new URL(request.url).pathname==='/api/admin/session/touch'){await env.DB.prepare('UPDATE admin_sessions SET last_active=? WHERE token_hash=?').bind(now,digest).run()}return true;}
 function validQuote(v){return v && String(v.name||'').trim().length>=2 && /^[0-9+()\s-]{8,22}$/.test(String(v.phone||'')) && String(v.type||'').length>0 && /^\d{4}-\d{2}-\d{2}$/.test(String(v.event_date||'')) && Number(v.guests)>=1 && Number(v.guests)<=50000 && String(v.notes||'').length<=2500}
 export default {async fetch(request,env){try{
  const url=new URL(request.url),p=url.pathname;
@@ -39,6 +39,7 @@ export default {async fetch(request,env){try{
   await sessionTable(env);
   if(!await authenticated(request,env))return json({error:'Acceso no autorizado'},401);
   if(p==='/api/admin/session'&&request.method==='GET')return json({ok:true});
+  if(p==='/api/admin/session/touch'&&request.method==='POST')return json({ok:true});
   if(p==='/api/admin/logout'&&request.method==='POST'){const t=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();await env.DB.prepare('DELETE FROM admin_sessions WHERE token_hash=?').bind(await signature('session:'+t,env.ADMIN_SECRET)).run();return json({ok:true})}
   if(p==='/api/admin/quotes'&&request.method==='GET'){const r=await env.DB.prepare('SELECT * FROM quotes ORDER BY id DESC LIMIT 300').all();return json(r.results||[])}
   if(p==='/api/admin/quotes/status'&&request.method==='PUT'){const d=await safeJson(request);if(!['nuevo','contactado','cotizado','confirmado','cancelado'].includes(d?.status))return json({error:'Estado inválido'},400);await env.DB.prepare('UPDATE quotes SET status=? WHERE id=?').bind(d.status,Number(d.id)).run();return json({ok:true})}
