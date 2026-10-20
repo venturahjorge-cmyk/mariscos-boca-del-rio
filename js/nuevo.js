@@ -33,7 +33,7 @@ function iniciarCarrusel(node){
   const previo=carruseles.get(node);
   if(previo)previo.stop();
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const items=[...node.children];if(!items.length)return;
+  const items=[...node.children];if(!items.length)return;if(items.length===1){node.scrollLeft=0;node.style.overflowX='hidden';return}node.style.overflowX='auto';
   node.scrollLeft=0;
   // Repetir las tarjetas para completar la anchura y lograr un ciclo sin huecos.
   while(node.scrollWidth<node.clientWidth*2.2 && node.children.length<60){
