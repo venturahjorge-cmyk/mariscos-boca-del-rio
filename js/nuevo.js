@@ -41,25 +41,26 @@ function iniciarCarrusel(node){
   }
   const grupo=[...node.children];
   grupo.forEach(item=>{const clone=item.cloneNode(true);clone.setAttribute('aria-hidden','true');clone.tabIndex=-1;node.appendChild(clone)});
-  let pausedUntil=0,last=0,frame=0,dragging=false,stopped=false;
+  let last=0,frame=0,stopped=false,activePointers=0;
   const loop=now=>{
     if(stopped)return;
-    if(last&&now>pausedUntil&&!dragging&&!document.hidden){
+    if(last&&!document.hidden&&activePointers===0){
       node.scrollLeft+=Math.min((now-last)/1000,.075)*28;
       const copy=node.children[grupo.length];
       if(copy){const limit=copy.offsetLeft-node.children[0].offsetLeft;if(limit>0&&node.scrollLeft>=limit)node.scrollLeft-=limit}
     }
     last=now;frame=requestAnimationFrame(loop);
   };
-  const pause=()=>{pausedUntil=performance.now()+1800};
-  const down=()=>{dragging=true;pause()};
-  const up=()=>{dragging=false;pause()};
+  // Solo suspender durante el arrastre activo; un toque no activa pausas temporizadas.
+  const down=()=>{activePointers++};
+  const up=()=>{activePointers=0;last=performance.now()};
   node.addEventListener('pointerdown',down);
   window.addEventListener('pointerup',up);
-  node.addEventListener('wheel',pause,{passive:true});
-  node.addEventListener('keydown',pause);
+  window.addEventListener('pointercancel',up);
+  window.addEventListener('blur',up);
   frame=requestAnimationFrame(loop);
-  carruseles.set(node,{stop:()=>{stopped=true;cancelAnimationFrame(frame);node.removeEventListener('pointerdown',down);window.removeEventListener('pointerup',up);node.removeEventListener('wheel',pause);node.removeEventListener('keydown',pause)}});
+  carruseles.set(node,{stop:()=>{stopped=true;cancelAnimationFrame(frame);node.removeEventListener('pointerdown',down);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);window.removeEventListener('blur',up)}});
+
 }
 
 let data=structuredClone(defaults);async function load(){try{const res=await fetch(API+'/api/content');if(res.ok){const v=await res.json();for(const k in defaults)if(v[k])data[k]={...data[k],...v[k]}}}catch(e){}draw(data)}load();
