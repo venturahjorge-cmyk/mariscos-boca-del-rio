@@ -67,6 +67,38 @@ async function renderQuotes(root){
  try{
   const quotes=await request('/api/admin/quotes');
   if(!quotes.length){el('p',{text:'Aún no hay solicitudes registradas.'},root);return}
+  const filterPanel=el('div',{class:'entry'},root);
+  el('h3',{text:'Buscar y filtrar solicitudes'},filterPanel);
+  const filters=el('div',{class:'row'},filterPanel);
+  const customer=el('input',{type:'search',placeholder:'Cliente, teléfono o folio'},filters);
+  const status=el('select',{},filters);
+  for(const [value,label] of [['','Todos los estatus'],['nuevo','Nuevo'],['contactado','Contactado'],['cotizado','Cotizado'],['confirmado','Confirmado'],['cancelado','Cancelado']])el('option',{value,text:label},status);
+  const dates=el('div',{class:'row'},filterPanel);
+  const fromLabel=el('label',{text:'Fecha de solicitud: desde'},dates),from=el('input',{type:'date'},fromLabel);
+  const toLabel=el('label',{text:'Hasta'},dates),to=el('input',{type:'date'},toLabel);
+  const controls=el('div',{class:'row'},filterPanel);
+  const reset=el('button',{type:'button',text:'Limpiar filtros'},controls);
+  const exportBtn=el('button',{type:'button',text:'Exportar a Excel (CSV)'},controls);
+  const count=el('p',{text:''},filterPanel);
+  const datePart=q=>String(q.created_at||'').slice(0,10);
+  let filtered=quotes.slice();
+  const matches=q=>{
+   const search=customer.value.trim().toLocaleLowerCase('es-MX');
+   const combined=['MBR-'+String(q.id).padStart(6,'0'),q.name,q.phone].join(' ').toLocaleLowerCase('es-MX');
+   const day=datePart(q);
+   return (!search||combined.includes(search))&&(!status.value||q.status===status.value)&&(!from.value||day>=from.value)&&(!to.value||day<=to.value);
+  };
+  const refreshFilters=()=>{filtered=quotes.filter(matches);count.textContent=filtered.length+' de '+quotes.length+' solicitudes';tbody.querySelectorAll('tr').forEach((tr,i)=>{tr.hidden=!matches(quotes[i])});exportBtn.disabled=!filtered.length};
+  customer.oninput=refreshFilters;status.onchange=refreshFilters;from.onchange=refreshFilters;to.onchange=refreshFilters;
+  reset.onclick=()=>{customer.value='';status.value='';from.value='';to.value='';refreshFilters()};
+  exportBtn.onclick=()=>{
+    const headers=['Folio','Fecha de solicitud (UTC)','Cliente','Teléfono','Correo','Tipo de evento','Fecha del evento','Invitados','Estatus','Comentarios iniciales'];
+    const safe=value=>{let str=String(value??'').replace(/\r?\n/g,' ').trim();if(/^[=+@\-\t\r]/.test(str))str="'"+str;return '"'+str.replace(/"/g,'""')+'"'};
+    const data=filtered.map(q=>['MBR-'+String(q.id).padStart(6,'0'),q.created_at,q.name,q.phone,q.email,q.type,q.event_date,q.guests,q.status,q.notes]);
+    const csv='\uFEFF'+[headers,...data].map(row=>row.map(safe).join(';')).join('\r\n');
+    const file=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download='MBR-cotizaciones-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
   const wrap=el('div',{},root);wrap.style.overflowX='auto';
   const table=el('table',{},wrap),thead=el('thead',{},table),head=el('tr',{},thead);
   for(const t of ['Folio','Cliente','Teléfono','Evento','Fecha','Invitados','Estado','Seguimiento'])el('th',{text:t},head);
@@ -81,7 +113,7 @@ async function renderQuotes(root){
    const statusMessage=el('small',{text:''},td);
    sel.onchange=async()=>{
     if(busy)return;const next=sel.value;busy=true;sel.disabled=true;statusMessage.textContent='Guardando...';
-    try{await request('/api/admin/quotes/status','PUT',{id:q.id,status:next});previous=next;statusMessage.textContent='Estado actualizado.'}
+    try{await request('/api/admin/quotes/status','PUT',{id:q.id,status:next});previous=next;q.status=next;statusMessage.textContent='Estado actualizado.';refreshFilters()}
     catch(err){sel.value=previous;statusMessage.textContent='No se guardó: '+err.message}
     finally{busy=false;sel.disabled=false}
    };
@@ -105,6 +137,7 @@ async function renderQuotes(root){
     }
    }
   }
+  refreshFilters();
  }catch(err){el('p',{text:'No se pudieron cargar las cotizaciones: '+err.message},root)}
 }
 </script></body></html>
