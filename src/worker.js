@@ -2,6 +2,8 @@ const corsHeaders={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Metho
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=utf-8',...corsHeaders,...extra}});
 const safeJson=async request=>{try{return await request.json()}catch{return null}};
 async function signature(s,key){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),'HMAC',{name:'HMAC',hash:'SHA-256'},false,['sign']);const buf=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(s));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+const credentialsTable=env=>env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_credentials (username TEXT PRIMARY KEY,password_hash TEXT NOT NULL,must_change INTEGER NOT NULL DEFAULT 1)').run();
+const pinHash=(pin,env)=>signature('admin-pin:'+pin,env.ADMIN_SECRET);
 const sessionTable=env=>env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_active INTEGER NOT NULL DEFAULT 0)').run();
 async function authenticated(request,env){if(!env.ADMIN_SECRET)return false;const value=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();if(!/^[a-f0-9]{64}$/.test(value))return false;const digest=await signature('session:'+value,env.ADMIN_SECRET);const now=Date.now();const row=await env.DB.prepare('SELECT last_active FROM admin_sessions WHERE token_hash=?').bind(digest).first();if(!row||row.last_active<=now-300000)return false;if(request.method==='POST'&&new URL(request.url).pathname==='/api/admin/session/touch'){await env.DB.prepare('UPDATE admin_sessions SET last_active=? WHERE token_hash=?').bind(now,digest).run()}return true;}
 function validQuote(v){return v && String(v.name||'').trim().length>=2 && /^[0-9+()\s-]{8,22}$/.test(String(v.phone||'')) && String(v.type||'').length>0 && /^\d{4}-\d{2}-\d{2}$/.test(String(v.event_date||'')) && Number(v.guests)>=1 && Number(v.guests)<=50000 && String(v.notes||'').length<=2500}
@@ -19,6 +21,7 @@ export default {async fetch(request,env){try{
  }
  if(p==='/api/admin/login'&&request.method==='POST'){
   if(!env.ADMIN_PASSWORD||!env.ADMIN_SECRET)return json({error:'Acceso en configuración'},503);
+  await credentialsTable(env);const stored=await env.DB.prepare("SELECT password_hash,must_change FROM admin_credentials WHERE username='Administrador'").first();
   const ip=request.headers.get('CF-Connecting-IP')||'unknown';
   const client=await signature('admin-login:'+ip,env.ADMIN_SECRET);
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_login_limits (client TEXT PRIMARY KEY, attempts INTEGER NOT NULL DEFAULT 0, blocked_until INTEGER NOT NULL DEFAULT 0)').run();
@@ -26,19 +29,22 @@ export default {async fetch(request,env){try{
   if(entry&&entry.blocked_until>now)return json({error:'Demasiados intentos. Intenta de nuevo en 15 minutos.'},429,{'Retry-After':String(Math.ceil((entry.blocked_until-now)/1000))});
   const data=await safeJson(request);
   const candidate=String(data?.password||'');
-  if(!/^\d{4,6}$/.test(candidate)||candidate!==env.ADMIN_PASSWORD){
+  if(!/^\d{4,6}$/.test(candidate)||(stored?await pinHash(candidate,env)!==stored.password_hash:candidate!==env.ADMIN_PASSWORD)){
    const attempts=(entry?.blocked_until>now||!entry?.blocked_until?Number(entry?.attempts||0):0)+1;
    const blockedUntil=attempts>=5?now+15*60*1000:0;
    await env.DB.prepare('INSERT INTO admin_login_limits (client,attempts,blocked_until) VALUES (?,?,?) ON CONFLICT(client) DO UPDATE SET attempts=excluded.attempts,blocked_until=excluded.blocked_until').bind(client,attempts,blockedUntil).run();
    return json({error:blockedUntil?'Demasiados intentos. Intenta de nuevo en 15 minutos.':'Credenciales inválidas'},blockedUntil?429:401);
   }
   await env.DB.prepare('DELETE FROM admin_login_limits WHERE client=?').bind(client).run();
-  const bytes=crypto.getRandomValues(new Uint8Array(32));const token=[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');const digest=await signature('session:'+token,env.ADMIN_SECRET);await sessionTable(env);await env.DB.prepare('INSERT INTO admin_sessions(token_hash,last_active) VALUES(?,?)').bind(digest,Date.now()).run();return json({token})
+  const bytes=crypto.getRandomValues(new Uint8Array(32));const token=[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');const digest=await signature('session:'+token,env.ADMIN_SECRET);await sessionTable(env);await env.DB.prepare('INSERT INTO admin_sessions(token_hash,last_active) VALUES(?,?)').bind(digest,Date.now()).run();return json({token,mustChange:stored?!!stored.must_change:true})
  }
  if(p.startsWith('/api/admin/')){
   await sessionTable(env);
   if(!await authenticated(request,env))return json({error:'Acceso no autorizado'},401);
-  if(p==='/api/admin/session'&&request.method==='GET')return json({ok:true});
+  await credentialsTable(env);const state=await env.DB.prepare("SELECT must_change FROM admin_credentials WHERE username='Administrador'").first();const mustChange=!state||!!state.must_change;
+  if(p==='/api/admin/session'&&request.method==='GET')return json({ok:true,mustChange});
+  if(p==='/api/admin/password'&&request.method==='PUT'){const d=await safeJson(request),next=String(d?.next||''),old=String(d?.current||'');const currentHash=state?await env.DB.prepare("SELECT password_hash FROM admin_credentials WHERE username='Administrador'").first():null;const validOld=currentHash?await pinHash(old,env)===currentHash.password_hash:old===env.ADMIN_PASSWORD;if(!validOld||!/^\d{4,6}$/.test(next)||next===old||next===env.ADMIN_PASSWORD)return json({error:'Verifica la contraseña actual y el nuevo PIN (4 a 6 números, diferente al inicial).'},400);await env.DB.prepare("INSERT INTO admin_credentials(username,password_hash,must_change) VALUES('Administrador',?,0) ON CONFLICT(username) DO UPDATE SET password_hash=excluded.password_hash,must_change=0").bind(await pinHash(next,env)).run();return json({ok:true})}
+  if(mustChange&&p!=='/api/admin/logout'&&p!=='/api/admin/session/touch')return json({error:'Debes cambiar la contraseña inicial antes de continuar.',mustChange:true},403);
   if(p==='/api/admin/session/touch'&&request.method==='POST')return json({ok:true});
   if(p==='/api/admin/logout'&&request.method==='POST'){const t=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();await env.DB.prepare('DELETE FROM admin_sessions WHERE token_hash=?').bind(await signature('session:'+t,env.ADMIN_SECRET)).run();return json({ok:true})}
   if(p==='/api/admin/quotes'&&request.method==='GET'){const r=await env.DB.prepare('SELECT * FROM quotes ORDER BY id DESC LIMIT 300').all();return json(r.results||[])}
