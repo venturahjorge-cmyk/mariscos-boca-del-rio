@@ -21,9 +21,9 @@ export default {async fetch(request,env){let stage='route';try{
  }
  if(p==='/api/admin/login'&&request.method==='POST'){stage='login-start';
   if(!env.ADMIN_PASSWORD||!env.ADMIN_SECRET)return json({error:'Acceso en configuración'},503);
-  await credentialsTable(env);const stored=await env.DB.prepare("SELECT password_hash,must_change FROM admin_credentials WHERE username='Administrador'").first();
+  stage='login-credentials-table';await credentialsTable(env);stage='login-credentials-query';const stored=await env.DB.prepare("SELECT password_hash,must_change FROM admin_credentials WHERE username='Administrador'").first();
   const ip=request.headers.get('CF-Connecting-IP')||'unknown';
-  const client=await signature('admin-login:'+ip,env.ADMIN_SECRET);
+  stage='login-client-signature';const client=await signature('admin-login:'+ip,env.ADMIN_SECRET);
   
   stage='login-limits';const now=Date.now(),entry=await env.DB.prepare('SELECT attempts,blocked_until FROM admin_login_limits WHERE client=?').bind(client).first();
   if(entry&&entry.blocked_until>now)return json({error:'Demasiados intentos. Intenta de nuevo en 15 minutos.'},429,{'Retry-After':String(Math.ceil((entry.blocked_until-now)/1000))});
