@@ -1,0 +1,12 @@
+{
+  "name": "mariscos-eventos-api",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mariscos-eventos-db",
+      "database_id": "a765e742-79d7-4dc8-b57c-8fbe297f92f8"
+    }
+  ]
+}
