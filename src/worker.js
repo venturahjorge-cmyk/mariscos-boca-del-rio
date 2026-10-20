@@ -16,7 +16,25 @@ export default {async fetch(request,env){try{
   const q=await env.DB.prepare('INSERT INTO quotes (name,phone,email,type,event_date,guests,notes) VALUES (?,?,?,?,?,?,?)').bind(String(v.name).trim().slice(0,120),String(v.phone).slice(0,22),String(v.email||'').slice(0,200),String(v.type).slice(0,80),String(v.event_date),Number(v.guests),String(v.notes||'').slice(0,2500)).run();
   const id=q.meta.last_row_id;return json({ok:true,id,folio:'MBR-'+String(id).padStart(6,'0')},201)
  }
- if(p==='/api/admin/login'&&request.method==='POST'){const data=await safeJson(request);if(!env.ADMIN_PASSWORD||!env.ADMIN_SECRET)return json({error:'Acceso en configuración'},503);if(!data||data.password!==env.ADMIN_PASSWORD)return json({error:'Credenciales inválidas'},401);const expires=String(Date.now()+8*60*60*1000);return json({token:expires+'.'+await signature(expires,env.ADMIN_SECRET)})}
+ if(p==='/api/admin/login'&&request.method==='POST'){
+  if(!env.ADMIN_PASSWORD||!env.ADMIN_SECRET)return json({error:'Acceso en configuración'},503);
+  const ip=request.headers.get('CF-Connecting-IP')||'unknown';
+  const client=await signature('admin-login:'+ip,env.ADMIN_SECRET);
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_login_limits (client TEXT PRIMARY KEY, attempts INTEGER NOT NULL DEFAULT 0, blocked_until INTEGER NOT NULL DEFAULT 0)').run();
+  const now=Date.now(),entry=await env.DB.prepare('SELECT attempts,blocked_until FROM admin_login_limits WHERE client=?').bind(client).first();
+  if(entry&&entry.blocked_until>now)return json({error:'Demasiados intentos. Intenta de nuevo en 15 minutos.'},429,{'Retry-After':String(Math.ceil((entry.blocked_until-now)/1000))});
+  const data=await safeJson(request);
+  const candidate=String(data?.password||'');
+  if(!/^\\d{4,6}$/.test(candidate)||candidate!==env.ADMIN_PASSWORD){
+   const attempts=(entry?.blocked_until>now||!entry?.blocked_until?Number(entry?.attempts||0):0)+1;
+   const blockedUntil=attempts>=5?now+15*60*1000:0;
+   await env.DB.prepare('INSERT INTO admin_login_limits (client,attempts,blocked_until) VALUES (?,?,?) ON CONFLICT(client) DO UPDATE SET attempts=excluded.attempts,blocked_until=excluded.blocked_until').bind(client,attempts,blockedUntil).run();
+   return json({error:blockedUntil?'Demasiados intentos. Intenta de nuevo en 15 minutos.':'Credenciales inválidas'},blockedUntil?429:401);
+  }
+  await env.DB.prepare('DELETE FROM admin_login_limits WHERE client=?').bind(client).run();
+  const expires=String(Date.now()+2*60*60*1000);
+  return json({token:expires+'.'+await signature(expires,env.ADMIN_SECRET)})
+ }
  if(p.startsWith('/api/admin/')){
   if(!await authenticated(request,env))return json({error:'Acceso no autorizado'},401);
   if(p==='/api/admin/quotes'&&request.method==='GET'){const r=await env.DB.prepare('SELECT * FROM quotes ORDER BY id DESC LIMIT 300').all();return json(r.results||[])}
