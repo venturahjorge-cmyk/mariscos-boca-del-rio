@@ -2,7 +2,8 @@ const corsHeaders={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Metho
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=utf-8',...corsHeaders,...extra}});
 const safeJson=async request=>{try{return await request.json()}catch{return null}};
 async function signature(s,key){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),'HMAC',{name:'HMAC',hash:'SHA-256'},false,['sign']);const buf=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(s));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-async function authenticated(request,env){if(!env.ADMIN_SECRET)return false;const value=(request.headers.get('Authorization')||'').replace(/^Bearer /,'');const [expires,mac]=value.split('.');if(!/^\d+$/.test(expires||'')||Number(expires)<Date.now()||!mac)return false;return (await signature(expires,env.ADMIN_SECRET))===mac;}
+const sessionTable=env=>env.DB.prepare('CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)').run();
+async function authenticated(request,env){if(!env.ADMIN_SECRET)return false;const value=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();if(!/^[a-f0-9]{64}$/.test(value))return false;const digest=await signature('session:'+value,env.ADMIN_SECRET);const row=await env.DB.prepare('SELECT token_hash FROM admin_sessions WHERE token_hash=?').bind(digest).first();return !!row;}
 function validQuote(v){return v && String(v.name||'').trim().length>=2 && /^[0-9+()\s-]{8,22}$/.test(String(v.phone||'')) && String(v.type||'').length>0 && /^\d{4}-\d{2}-\d{2}$/.test(String(v.event_date||'')) && Number(v.guests)>=1 && Number(v.guests)<=50000 && String(v.notes||'').length<=2500}
 export default {async fetch(request,env){try{
  const url=new URL(request.url),p=url.pathname;
@@ -32,11 +33,13 @@ export default {async fetch(request,env){try{
    return json({error:blockedUntil?'Demasiados intentos. Intenta de nuevo en 15 minutos.':'Credenciales inválidas'},blockedUntil?429:401);
   }
   await env.DB.prepare('DELETE FROM admin_login_limits WHERE client=?').bind(client).run();
-  const expires=String(Date.now()+2*60*60*1000);
-  return json({token:expires+'.'+await signature(expires,env.ADMIN_SECRET)})
+  const bytes=crypto.getRandomValues(new Uint8Array(32));const token=[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');const digest=await signature('session:'+token,env.ADMIN_SECRET);await sessionTable(env);await env.DB.prepare('INSERT INTO admin_sessions(token_hash) VALUES(?)').bind(digest).run();return json({token})
  }
  if(p.startsWith('/api/admin/')){
+  await sessionTable(env);
   if(!await authenticated(request,env))return json({error:'Acceso no autorizado'},401);
+  if(p==='/api/admin/session'&&request.method==='GET')return json({ok:true});
+  if(p==='/api/admin/logout'&&request.method==='POST'){const t=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();await env.DB.prepare('DELETE FROM admin_sessions WHERE token_hash=?').bind(await signature('session:'+t,env.ADMIN_SECRET)).run();return json({ok:true})}
   if(p==='/api/admin/quotes'&&request.method==='GET'){const r=await env.DB.prepare('SELECT * FROM quotes ORDER BY id DESC LIMIT 300').all();return json(r.results||[])}
   if(p==='/api/admin/quotes/status'&&request.method==='PUT'){const d=await safeJson(request);if(!['nuevo','contactado','cotizado','confirmado','cancelado'].includes(d?.status))return json({error:'Estado inválido'},400);await env.DB.prepare('UPDATE quotes SET status=? WHERE id=?').bind(d.status,Number(d.id)).run();return json({ok:true})}
   if(p==='/api/admin/content'&&request.method==='PUT'){const d=await safeJson(request);if(!d||typeof d.key!=='string'||!/^[a-z0-9_-]{1,60}$/i.test(d.key)||JSON.stringify(d.value).length>100000)return json({error:'Contenido inválido'},400);await env.DB.prepare('INSERT INTO content(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP').bind(d.key,JSON.stringify(d.value)).run();return json({ok:true})}
