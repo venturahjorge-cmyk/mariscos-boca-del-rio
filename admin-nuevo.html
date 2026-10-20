@@ -20,6 +20,34 @@ document.getElementById('logout').onclick=async()=>{try{await request('/api/admi
 (async()=>{if(!token)return;if(Date.now()-lastActivity>=IDLE_MS){forgetSession();return}try{const status=await request('/api/admin/session');document.getElementById('login').hidden=true;if(status.mustChange){document.getElementById('change-pin').hidden=false}else{db=await request('/api/content');document.getElementById('workspace').hidden=false;drawTabs();switchTab('cintillo')}}catch{forgetSession()}})();
 function drawTabs(){const n=document.getElementById('tabs');n.replaceChildren();modules.forEach(k=>{const b=el('button',{text:k.toUpperCase()},n);b.onclick=()=>switchTab(k)})}
 function field(parent,title,value,onChange,textarea=false){const l=el('label',{text:title},parent),inp=el(textarea?'textarea':'input',{},l);inp.value=value??'';inp.oninput=()=>onChange(inp.value);return inp}
+async function uploadPhoto(file,button,done){
+ if(!file)return;
+ if(!/^image\/(jpeg|png|webp)$/.test(file.type)){alert('Selecciona una fotografía JPG, PNG o WebP.');return}
+ if(file.size>16000000){alert('El archivo original no debe superar los 16 MB.');return}
+ const label=button.textContent;button.disabled=true;button.textContent='Optimizando y subiendo...';
+ try{
+  const img=await createImageBitmap(file);
+  const max=1200,scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));
+  canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);img.close();
+  let blob=null;for(const quality of [.8,.7,.6,.5,.4]){
+   blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',quality));if(blob&&blob.size<=650000)break;
+  }
+  if(!blob||blob.size>650000)throw Error('No se pudo optimizar suficientemente esta imagen.');
+  const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(Error('No se pudo leer el archivo'));reader.readAsDataURL(blob)});
+  const saved=await request('/api/admin/images','POST',{mime:'image/webp',data});
+  done(saved.url);button.textContent='Fotografía subida';setTimeout(()=>{button.textContent=label},1500);
+ }catch(error){alert('Error al subir fotografía: '+error.message);button.textContent=label}
+ finally{button.disabled=false}
+}
+function uploadControl(parent,onSuccess){
+ const wrap=el('div',{},parent);wrap.style.margin='10px 0';
+ const input=el('input',{type:'file',accept:'image/jpeg,image/png,image/webp'},wrap);
+ const button=el('button',{type:'button',text:'Subir fotografía del equipo'},wrap);
+ button.onclick=()=>uploadPhoto(input.files?.[0],button,url=>{onSuccess(url);input.value=''});
+ el('small',{text:'JPG, PNG o WebP · Se optimiza antes de guardarse. No requiere enlace externo.'},wrap);
+}
+
 function switchTab(k){section=k;const root=document.getElementById('editor');root.replaceChildren();el('h2',{text:k.toUpperCase()},root);document.getElementById('message').textContent='';if(k==='cotizaciones'){renderQuotes(root);return}if(k==='indicadores'){renderIndicators(root);return}const val=structuredClone(db[k]||{});field(root,'Título',val.titulo,v=>val.titulo=v);field(root,'Subtítulo',val.subtitulo,v=>val.subtitulo=v);if(k==='cintillo')field(root,'Texto superior',val.texto,v=>val.texto=v,true);if(k==='nosotros'){field(root,'Descripción',val.descripcion,v=>val.descripcion=v,true);el('h3',{text:'Misión, visión y valores (JSON)'},root);jsonField(root,val,'valores')}if(k==='hero'||k==='cintillo')field(root,'URL de imagen',val.imagen,v=>val.imagen=v);if(k==='contacto'){el('p',{text:'Los datos que guardes aquí actualizarán enlaces y redes sociales en la página pública.'},root);for(const [key,label,placeholder] of [['direccion','Dirección de oficinas','Calle, número, colonia, ciudad'],['telefono','Teléfono (con clave de área)','228...'],['whatsapp','WhatsApp (52 + 10 dígitos)','52228...'],['correo','Correo electrónico','contacto@empresa.com'],['horario','Horario de atención','Lunes a viernes...'],['facebook','Página de Facebook','https://www.facebook.com/...'],['instagram','Perfil de Instagram','https://www.instagram.com/...'],['tiktok','Perfil de TikTok','https://www.tiktok.com/@...'],['x','Perfil de X','https://x.com/...']]){const input=field(root,label,val[key],v=>val[key]=v);input.placeholder=placeholder;if(['facebook','instagram','tiktok','x'].includes(key))input.type='url';if(key==='correo')input.type='email';}}if(['destacados','celebraciones','servicios','eventos','empresas'].includes(k)){
  el('p',{text:'Edita cada elemento aquí. Para publicar imágenes, utiliza una URL HTTPS pública alojada en GitHub u otro servicio gratuito.'},root);
  if(!Array.isArray(val.items))val.items=[];
@@ -30,6 +58,7 @@ function switchTab(k){section=k;const root=document.getElementById('editor');roo
  const panel=el('div',{class:'entry'},editor);el('b',{text:'Elemento '+(index+1)},panel);
  field(panel,'Título',item.titulo,v=>item.titulo=v);
  const imageField=field(panel,'URL pública de imagen HTTPS',item.imagen,v=>{item.imagen=v;preview.src=v||'';preview.hidden=!v});
+ uploadControl(panel,url=>{item.imagen=url;imageField.value=url;preview.src=url;preview.hidden=false});
  const preview=el('img',{alt:'Vista previa del elemento'},panel);preview.style.cssText='width:100%;max-width:320px;height:150px;object-fit:cover;border-radius:9px;margin:12px 0;display:block';preview.hidden=!item.imagen;if(item.imagen)preview.src=item.imagen;
  if(k==='eventos'){
  field(panel,'Fecha del evento',item.fecha,v=>item.fecha=v);
@@ -41,6 +70,7 @@ function switchTab(k){section=k;const root=document.getElementById('editor');roo
   item.imagenes.forEach((url,j)=>{
    const line=el('div',{class:'entry'},gallery);
    field(line,'Fotografía '+(j+1)+' · URL pública HTTPS',url,v=>{item.imagenes[j]=v;pic.src=v;pic.hidden=!v});
+   uploadControl(line,url=>{item.imagenes[j]=url;line.querySelector('input:not([type=file])').value=url;pic.src=url;pic.hidden=false});
    const pic=el('img',{alt:'Vista previa galería'},line);pic.style.cssText='width:100%;max-width:220px;height:100px;object-fit:cover;border-radius:8px';pic.hidden=!url;if(url)pic.src=url;
    const del=el('button',{type:'button',text:'Eliminar fotografía '+(j+1)},line);del.onclick=()=>{item.imagenes.splice(j,1);renderGallery()}
   });
