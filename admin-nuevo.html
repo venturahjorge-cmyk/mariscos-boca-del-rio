@@ -85,11 +85,11 @@ async function renderQuotes(root){
     catch(err){sel.value=previous;statusMessage.textContent='No se guardó: '+err.message}
     finally{busy=false;sel.disabled=false}
    };
-   const notes=el('td',{},tr),button=el('button',{type:'button',text:'Ver / Agregar nota'},notes);
+   const notes=el('td',{},tr),button=el('button',{type:'button',text:'Ver seguimiento e historial'},notes);
    const detail=el('div',{},notes);detail.hidden=true;detail.style.cssText='min-width:220px;max-width:340px;margin-top:12px';
    button.onclick=async()=>{
     detail.hidden=!detail.hidden;if(detail.hidden)return;
-    detail.replaceChildren();const list=el('div',{},detail);el('p',{text:'Cargando notas...'},list);
+    detail.replaceChildren();const history=el('div',{},detail);el('p',{text:'Cargando historial...'},history);try{const actions=await request('/api/admin/quotes/history?id='+q.id);history.replaceChildren();el('h4',{text:'Historial de modificaciones'},history);if(!actions.length)el('small',{text:'Todavía no hay modificaciones registradas.'},history);actions.forEach(change=>{const entry=el('div',{class:'entry'},history);const formatted=new Date(String(change.created_at||'').replace(' ','T')+'Z').toLocaleString('es-MX',{timeZone:'America/Mexico_City',dateStyle:'short',timeStyle:'medium'});el('small',{text:formatted+' · '+change.actor},entry);el('p',{text:change.action+': '+(change.old_value?change.old_value+' → ':'')+(change.new_value||'')},entry)})}catch(err){history.replaceChildren();el('p',{text:'No fue posible consultar el historial: '+err.message},history)}const list=el('div',{},detail);el('p',{text:'Cargando notas...'},list);
     try{const old=await request('/api/admin/quotes/notes?id='+q.id);list.replaceChildren();
      if(!old.length)el('small',{text:'Sin observaciones registradas.'},list);
      else old.forEach(note=>{const item=el('div',{class:'entry'},list);el('small',{text:note.created_at||''},item);el('p',{text:note.note||''},item)});
@@ -99,7 +99,7 @@ async function renderQuotes(root){
     const message=el('small',{text:''},detail);
     save.onclick=async()=>{const note=input.value.trim();if(!note){message.textContent='Escribe una observación.';return}
      save.disabled=true;message.textContent='Guardando...';
-     try{await request('/api/admin/quotes/note','POST',{id:q.id,note});input.value='';message.textContent='Observación guardada.';const item=el('div',{class:'entry'},list);el('small',{text:'Nueva observación'},item);el('p',{text:note},item)}
+     try{await request('/api/admin/quotes/note','POST',{id:q.id,note});input.value='';message.textContent='Observación guardada.';const item=el('div',{class:'entry'},list);el('small',{text:new Date().toLocaleString('es-MX',{timeZone:'America/Mexico_City'})},item);el('p',{text:note},item)}
      catch(err){message.textContent='No se guardó: '+err.message}
      finally{save.disabled=false}
     }
