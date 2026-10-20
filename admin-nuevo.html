@@ -60,5 +60,51 @@ function switchTab(k){section=k;const root=document.getElementById('editor');roo
 }
 const save=el('button',{text:'Guardar y publicar cambios'},root);save.onclick=async()=>{try{if(['destacados','celebraciones'].includes(k)&&val.items.length<2)throw Error('Para conservar el carrusel automático, mantén al menos 2 fotografías. No se guardó ningún cambio.');if(['destacados','celebraciones'].includes(k)&&val.items.length>10)throw Error('El carrusel admite un máximo de 10 fotografías.');if(val._parseError)throw Error('Corrige el JSON');delete val._parseError;await request('/api/admin/content','PUT',{key:k,value:val});db[k]=structuredClone(val);root.replaceChildren();el('h2',{text:'Cambios guardados'},root);el('p',{text:'La información se publicó correctamente. El formulario está cerrado para evitar modificar accidentalmente otros elementos.'},root);const again=el('button',{type:'button',text:'Editar otro elemento o agregar fotografía'},root);again.onclick=()=>switchTab(k);document.getElementById('message').textContent='Guardado y publicado correctamente.'}catch(e){document.getElementById('message').textContent=e.message}}}
 function jsonField(root,val,key){const l=el('label',{text:'Editor de datos'},root),i=el('textarea',{},l);i.style.minHeight='230px';i.value=JSON.stringify(val[key]||[],null,2);i.oninput=()=>{try{val[key]=JSON.parse(i.value);val._parseError=false}catch(e){val._parseError=true}}}
-async function renderQuotes(root){try{const quotes=await request('/api/admin/quotes');const wrap=el('div',{},root);wrap.style.overflowX='auto';const table=el('table',{},wrap),head=el('tr',{},table);for(const t of ['Folio','Cliente','Teléfono','Evento','Fecha','Invitados','Estado','Seguimiento'])el('th',{text:t},head);for(const q of quotes){const tr=el('tr',{},table);for(const t of ['MBR-'+String(q.id).padStart(6,'0'),q.name,q.phone,q.type,q.event_date,q.guests])el('td',{text:String(t)},tr);const td=el('td',{},tr),s=el('select',{},td);for(const x of ['nuevo','contactado','cotizado','confirmado','cancelado']){let opt=el('option',{value:x,text:x},s);if(x===q.status)opt.selected=true}s.onchange=async()=>{try{await request('/api/admin/quotes/status','PUT',{id:q.id,status:s.value})}catch(e){alert(e.message)}};const notes=el('td',{},tr),b=el('button',{text:'Ver / Agregar'},notes);b.onclick=async()=>{const old=await request('/api/admin/quotes/notes?id='+q.id);const note=prompt('Notas actuales:\n'+old.map(x=>x.created_at+' '+x.note).join('\n')+'\n\nAgregar nueva nota (cancelar para salir):');if(note?.trim())await request('/api/admin/quotes/note','POST',{id:q.id,note})}}}catch(e){el('p',{text:e.message},root)}}
+async function renderQuotes(root){
+ root.replaceChildren();el('h2',{text:'Seguimiento de cotizaciones'},root);
+ const refresh=el('button',{type:'button',text:'Actualizar solicitudes'},root);refresh.onclick=()=>renderQuotes(root);
+ const info=el('p',{text:'Consulta las solicitudes, cambia su estado y registra observaciones por folio.'},root);
+ try{
+  const quotes=await request('/api/admin/quotes');
+  if(!quotes.length){el('p',{text:'Aún no hay solicitudes registradas.'},root);return}
+  const wrap=el('div',{},root);wrap.style.overflowX='auto';
+  const table=el('table',{},wrap),thead=el('thead',{},table),head=el('tr',{},thead);
+  for(const t of ['Folio','Cliente','Teléfono','Evento','Fecha','Invitados','Estado','Seguimiento'])el('th',{text:t},head);
+  const tbody=el('tbody',{},table);
+  for(const q of quotes){
+   const tr=el('tr',{},tbody);
+   for(const t of ['MBR-'+String(q.id).padStart(6,'0'),q.name,q.phone,q.type,q.event_date,q.guests])el('td',{text:String(t??'')},tr);
+   const td=el('td',{},tr),sel=el('select',{},td);
+   const estados=['nuevo','contactado','cotizado','confirmado','cancelado'];
+   for(const st of estados){const option=el('option',{value:st,text:st[0].toUpperCase()+st.slice(1)},sel);if(st===q.status)option.selected=true}
+   let previous=q.status||'nuevo',busy=false;
+   const statusMessage=el('small',{text:''},td);
+   sel.onchange=async()=>{
+    if(busy)return;const next=sel.value;busy=true;sel.disabled=true;statusMessage.textContent='Guardando...';
+    try{await request('/api/admin/quotes/status','PUT',{id:q.id,status:next});previous=next;statusMessage.textContent='Estado actualizado.'}
+    catch(err){sel.value=previous;statusMessage.textContent='No se guardó: '+err.message}
+    finally{busy=false;sel.disabled=false}
+   };
+   const notes=el('td',{},tr),button=el('button',{type:'button',text:'Ver / Agregar nota'},notes);
+   const detail=el('div',{},notes);detail.hidden=true;detail.style.cssText='min-width:220px;max-width:340px;margin-top:12px';
+   button.onclick=async()=>{
+    detail.hidden=!detail.hidden;if(detail.hidden)return;
+    detail.replaceChildren();const list=el('div',{},detail);el('p',{text:'Cargando notas...'},list);
+    try{const old=await request('/api/admin/quotes/notes?id='+q.id);list.replaceChildren();
+     if(!old.length)el('small',{text:'Sin observaciones registradas.'},list);
+     else old.forEach(note=>{const item=el('div',{class:'entry'},list);el('small',{text:note.created_at||''},item);el('p',{text:note.note||''},item)});
+    }catch(err){list.replaceChildren();el('p',{text:'No se pudieron cargar las notas: '+err.message},list)}
+    const input=el('textarea',{placeholder:'Nueva observación del seguimiento',maxlength:'1200'},detail);
+    const save=el('button',{type:'button',text:'Guardar observación'},detail);
+    const message=el('small',{text:''},detail);
+    save.onclick=async()=>{const note=input.value.trim();if(!note){message.textContent='Escribe una observación.';return}
+     save.disabled=true;message.textContent='Guardando...';
+     try{await request('/api/admin/quotes/note','POST',{id:q.id,note});input.value='';message.textContent='Observación guardada.';const item=el('div',{class:'entry'},list);el('small',{text:'Nueva observación'},item);el('p',{text:note},item)}
+     catch(err){message.textContent='No se guardó: '+err.message}
+     finally{save.disabled=false}
+    }
+   }
+  }
+ }catch(err){el('p',{text:'No se pudieron cargar las cotizaciones: '+err.message},root)}
+}
 </script></body></html>
