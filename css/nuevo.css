@@ -86,3 +86,8 @@ img,svg{max-width:100%}
  .nav .nav-actions .btn{min-width:100%}
  #detalle-evento .cards{grid-template-columns:1fr}
 }
+
+/* Rendimiento en móviles: mantener el diseño evitando pintura fuera de pantalla. */
+@supports(content-visibility:auto){
+ #nosotros,#celebraciones,#servicios,#eventos,#empresas,#contacto{content-visibility:auto;contain-intrinsic-size:auto 650px}
+}
