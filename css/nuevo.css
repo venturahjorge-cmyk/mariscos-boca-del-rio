@@ -8,5 +8,14 @@
 /* Ocultar únicamente las barras de desplazamiento de los carruseles */
 .scroller{scrollbar-width:none;-ms-overflow-style:none;}
 .scroller::-webkit-scrollbar{display:none;width:0;height:0;}
-\n.social-links{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.social-icon{width:42px;height:42px;border:1px solid var(--gold);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-weight:800;font-size:23px;text-decoration:none}.social-icon:hover,.social-icon:focus-visible{background:var(--gold);color:var(--navy)}\n
+
+.social-links{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.social-icon{width:42px;height:42px;border:1px solid var(--gold);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-weight:800;font-size:23px;text-decoration:none}.social-icon:hover,.social-icon:focus-visible{background:var(--gold);color:var(--navy)}
+
 .social-icon svg{display:block;flex-shrink:0}.social-pending{opacity:.65;cursor:default}.social-pending:hover{background:transparent;color:var(--gold)}
+
+/* Redes visibles inmediatamente debajo de las acciones de contacto */
+.contact-info .social-section{margin-top:32px;padding-top:22px;border-top:1px solid rgba(208,165,72,.35)}
+.social-section h4{font:600 1rem/1.4 system-ui,sans-serif;color:var(--white);margin:0 0 14px}
+.contact-info .social-links{display:flex;gap:15px;flex-wrap:wrap;align-items:center;margin:0}
+.contact-info .social-icon{width:50px;height:50px;border:1.5px solid var(--gold);border-radius:50%;color:var(--gold);display:inline-flex;justify-content:center;align-items:center;font-size:25px;line-height:1;text-decoration:none;background:rgba(255,255,255,.04)}
+.contact-info .social-icon svg{width:26px;height:26px}
