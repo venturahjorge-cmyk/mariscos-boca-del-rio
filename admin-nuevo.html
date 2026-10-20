@@ -30,7 +30,23 @@ function switchTab(k){section=k;const root=document.getElementById('editor');roo
  field(panel,'Título',item.titulo,v=>item.titulo=v);
  const imageField=field(panel,'URL pública de imagen HTTPS',item.imagen,v=>{item.imagen=v;preview.src=v||'';preview.hidden=!v});
  const preview=el('img',{alt:'Vista previa del elemento'},panel);preview.style.cssText='width:100%;max-width:320px;height:150px;object-fit:cover;border-radius:9px;margin:12px 0;display:block';preview.hidden=!item.imagen;if(item.imagen)preview.src=item.imagen;
- if(k==='eventos'){field(panel,'Fecha',item.fecha,v=>item.fecha=v);field(panel,'Descripción',item.descripcion,v=>item.descripcion=v,true)}
+ if(k==='eventos'){
+ field(panel,'Fecha del evento',item.fecha,v=>item.fecha=v);
+ field(panel,'Descripción',item.descripcion,v=>item.descripcion=v,true);
+ if(!Array.isArray(item.imagenes))item.imagenes=item.imagen?[item.imagen]:[];
+ const gallery=el('div',{class:'entry'},panel);
+ const renderGallery=()=>{
+  gallery.replaceChildren();el('h3',{text:'Galería del evento ('+item.imagenes.length+'/10)'},gallery);
+  item.imagenes.forEach((url,j)=>{
+   const line=el('div',{class:'entry'},gallery);
+   field(line,'Fotografía '+(j+1)+' · URL pública HTTPS',url,v=>{item.imagenes[j]=v;pic.src=v;pic.hidden=!v});
+   const pic=el('img',{alt:'Vista previa galería'},line);pic.style.cssText='width:100%;max-width:220px;height:100px;object-fit:cover;border-radius:8px';pic.hidden=!url;if(url)pic.src=url;
+   const del=el('button',{type:'button',text:'Eliminar fotografía '+(j+1)},line);del.onclick=()=>{item.imagenes.splice(j,1);renderGallery()}
+  });
+  if(item.imagenes.length<10){const add=el('button',{type:'button',text:'+ Agregar fotografía a la galería'},gallery);add.onclick=()=>{item.imagenes.push('');renderGallery()}}
+ };
+ renderGallery()
+}
  const crop=el('div',{class:'row'},panel);
  field(crop,'Zoom (%)',item.zoom??100,v=>item.zoom=Math.max(100,Math.min(300,Number(v)||100)));
  field(crop,'Posición horizontal (0–100)',item.posX??50,v=>item.posX=Math.max(0,Math.min(100,Number(v)||50)));
