@@ -7,8 +7,8 @@ const pinHash=(pin,env)=>signature('admin-pin:'+pin,env.ADMIN_SECRET);
 const sessionTable=async()=>{};
 async function authenticated(request,env){if(!env.ADMIN_SECRET)return false;const value=(request.headers.get('Authorization')||'').replace(/^Bearer /,'').trim();if(!/^[a-f0-9]{64}$/.test(value))return false;const digest=await signature('session:'+value,env.ADMIN_SECRET);const now=Date.now();const row=await env.DB.prepare('SELECT last_active FROM admin_sessions WHERE token_hash=?').bind(digest).first();if(!row||row.last_active<=now-300000)return false;if(request.method==='POST'&&new URL(request.url).pathname==='/api/admin/session/touch'){await env.DB.prepare('UPDATE admin_sessions SET last_active=? WHERE token_hash=?').bind(now,digest).run()}return true;}
 function validQuote(v){return v && String(v.name||'').trim().length>=2 && /^[0-9+()\s-]{8,22}$/.test(String(v.phone||'')) && String(v.type||'').length>0 && /^\d{4}-\d{2}-\d{2}$/.test(String(v.event_date||'')) && Number(v.guests)>=1 && Number(v.guests)<=50000 && String(v.notes||'').length<=2500}
-export default {async fetch(request,env){try{
- const url=new URL(request.url),p=url.pathname;let stage='route';
+export default {async fetch(request,env){let stage='route';try{
+ const url=new URL(request.url),p=url.pathname;
  if(request.method==='OPTIONS')return new Response(null,{headers:corsHeaders});
  if(p==='/api/health')return json({ok:true,service:'MBR Eventos API',database:!!env.DB,images:!!env.IMAGES});
  if(!env.DB)return json({error:'Base de datos no vinculada'},503);
