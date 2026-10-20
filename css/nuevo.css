@@ -91,3 +91,6 @@ img,svg{max-width:100%}
 @supports(content-visibility:auto){
  #nosotros,#celebraciones,#servicios,#eventos,#empresas,#contacto{content-visibility:auto;contain-intrinsic-size:auto 650px}
 }
+
+/* Logo institucional configurable sin alterar la navegación */
+.brand{display:flex;align-items:center;gap:12px}.brand-copy{display:grid}.brand-logo{height:66px;width:82px;object-fit:contain;flex:none}.brand-logo[hidden]{display:none!important}@media(max-width:650px){.brand{gap:7px}.brand-logo{width:56px;height:52px}.brand-copy{min-width:0}.brand-copy span{font-size:inherit}}
