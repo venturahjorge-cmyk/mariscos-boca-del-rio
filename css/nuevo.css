@@ -4,3 +4,7 @@
 .scroller .slide{overflow:hidden;}
 .scroller .slide img{transition:none;}
 @media(prefers-reduced-motion:reduce){.scroller{scroll-snap-type:x mandatory;}}
+
+/* Ocultar únicamente las barras de desplazamiento de los carruseles */
+.scroller{scrollbar-width:none;-ms-overflow-style:none;}
+.scroller::-webkit-scrollbar{display:none;width:0;height:0;}
