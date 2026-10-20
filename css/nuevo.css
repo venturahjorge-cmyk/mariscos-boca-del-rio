@@ -8,3 +8,4 @@
 /* Ocultar únicamente las barras de desplazamiento de los carruseles */
 .scroller{scrollbar-width:none;-ms-overflow-style:none;}
 .scroller::-webkit-scrollbar{display:none;width:0;height:0;}
+\n.social-links{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.social-icon{width:42px;height:42px;border:1px solid var(--gold);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--gold);font-weight:800;font-size:23px;text-decoration:none}.social-icon:hover,.social-icon:focus-visible{background:var(--gold);color:var(--navy)}\n
